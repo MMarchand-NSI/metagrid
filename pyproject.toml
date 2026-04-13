@@ -27,11 +27,10 @@ dependencies = [
 ]
 
 
-#[project.urls]
-#Homepage = "https://github.com/toncompte/grox"
-#Repository = "https://github.com/toncompte/grox"
-#Issues = "https://github.com/toncompte/grox/issues"
-#Changelog = "https://github.com/toncompte/grox/blob/main/CHANGELOG.md"
+[project.urls]
+Homepage = "https://github.com/MMarchand-NSI/metagrid"
+Repository = "https://github.com/MMarchand-NSI/metagrid"
+Issues = "https://github.com/MMarchand-NSI/metagrid/issues"
 
 
 [dependency-groups]
