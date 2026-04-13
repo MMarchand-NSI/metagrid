@@ -9,8 +9,17 @@ HEIGHT = 20
 grille: list[list[int]]
 running: bool
 
-#! CALLBACKS
+jeu = metagrid.create(HEIGHT, WIDTH, 20, 0)
 
+
+@jeu.init
+def init():
+    global grille, running
+    grille = [ [0]*WIDTH for _ in range(HEIGHT) ]
+    running = False
+
+
+@jeu.callback_click
 def cliquer(i: int, j: int):
     """
     Callback de l'évènement click. i et j sont les coordonnées de la grille cliquées
@@ -19,6 +28,8 @@ def cliquer(i: int, j: int):
     grille[i][j] = 1 - grille[i][j]
     draw()
 
+
+@jeu.callback_key
 def touche(car: str):
     """
     Callback de l'évènement touche appuyée.
@@ -28,10 +39,11 @@ def touche(car: str):
     if car == 's':
         running = not running
     elif car == 'a':
-        grille = [ [randint(0,1) for _ in range(WIDTH)] for _ in range (HEIGHT) ]
+        grille = [ [randint(0,1) for _ in range(WIDTH)] for _ in range(HEIGHT) ]
         draw()
 
 
+@jeu.update
 def update():
     """
     Cette fonction sert à mettre à jour la grille à chaque fps si le flag running est True
@@ -41,9 +53,10 @@ def update():
         grille = prochaine_grille(grille)
 
 
+@jeu.draw
 def draw():
     """
-    Cette fonction sert à dessiner l'état courant de la grille si le flag running est True
+    Cette fonction sert à dessiner l'état courant de la grille
     """
     global running, grille
     for j in range(WIDTH):
@@ -52,12 +65,6 @@ def draw():
 
 
 #! FONCTIONS DU JEU
-
-def init():
-    global grille, running
-    grille = [ [0]*WIDTH for _ in range (HEIGHT) ]
-    running = False
-
 
 def nb_voisins(row: int, col: int, g: list[list[int]]) -> int:
     """Renvoie le nombre de voisins de la cellule de coordonnée (row, col) dans la grille g torique"""
@@ -74,6 +81,4 @@ def prochaine_grille(g: list[list[int]]) -> list[list[int]]:
     return [[prochain_etat(i,j,g) for j in range(WIDTH)] for i in range(HEIGHT)]
 
 
-if __name__ == "__main__":
-    jeu = metagrid.create(HEIGHT, WIDTH, 20, 0)
-    jeu.start(init, fn_click=cliquer, fn_key=touche, fn_draw=draw, fn_update=update)
+jeu.start()

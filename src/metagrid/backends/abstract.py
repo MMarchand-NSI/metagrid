@@ -16,37 +16,51 @@ class AbstractEngine(metaclass = ABCMeta):
         self.cell_size: int = cell_size  # Cell size
         self.fps: int = 60               # FPS, defaults to 60
         self.frame_no: int = 0           # Holds the number of frame since start
-        
 
+        self._init_fn: Callable[[], None] | None = None
+        self.fn_click: Callable[[int, int], None] | None = None
+        self.fn_key: Callable[[str], None] | None = None
+        self.fn_draw: Callable[[], None] | None = None
+        self.fn_update: Callable[[], None] | None = None
+
+
+    def init(self, fn: Callable[[], None]) -> Callable[[], None]:
+        """Decorator. Register the initialisation function."""
+        self._init_fn = fn
+        return fn
+
+    def callback_click(self, fn: Callable[[int, int], None]) -> Callable[[int, int], None]:
+        """Decorator. Register the function called when a cell is clicked.
+        The function receives (i, j) — the grid coordinates of the clicked cell.
+        """
+        self.fn_click = fn
+        return fn
+
+    def callback_key(self, fn: Callable[[str], None]) -> Callable[[str], None]:
+        """Decorator. Register the function called when a key is pressed.
+        The function receives the pressed character as a string.
+        """
+        self.fn_key = fn
+        return fn
+
+    def draw(self, fn: Callable[[], None]) -> Callable[[], None]:
+        """Decorator. Register the draw function, called every frame to render the grid."""
+        self.fn_draw = fn
+        return fn
+
+    def update(self, fn: Callable[[], None]) -> Callable[[], None]:
+        """Decorator. Register the update function, called every frame before draw."""
+        self.fn_update = fn
+        return fn
 
 
     @abstractmethod
-    def start(self, init: Callable[[], None],
-                    fn_click: Callable[[int, int], None] | None,
-                    fn_key: Callable[[str], None] | None,
-                    fn_draw: Callable[[], None],
-                    fn_update: Callable[[], None]) -> None:
-        """
-        Start the engine, declaring init function and callbacks.
-
-        ### Parameters
-        1. init
-                - The function needed to initialize the state of the game
-        2. fn_click
-                - Callback handling the click on the cell (i, j)
-        3. fn_key
-                - Callback handling the key pressed
-        4. fn_draw
-                - Function that will be called for every frame to render graphics, right after update's call 
-        5. fn_update
-                - Function that will be called for every frame, right before draw's call
-        """
-        self.init: Callable[[], None] = init
-        self.fn_click: Callable[[int, int], None] | None = fn_click
-        self.fn_key: Callable[[str], None] | None= fn_key
-        self.fn_draw: Callable[[], None] | None = fn_draw
-        self.fn_update: Callable[[], None] | None = fn_update
-        init()
+    def start(self) -> None:
+        """Start the game loop. Register all callbacks with decorators before calling this."""
+        assert self._init_fn is not None, "An init function must be registered with @game.init"
+        assert self.fn_draw is not None, "A draw function must be registered with @game.draw"
+        assert self.fn_update is not None, "An update function must be registered with @game.update"
+        self._init_fn()
         ...
 
 
@@ -57,19 +71,30 @@ class AbstractEngine(metaclass = ABCMeta):
 
     @abstractmethod
     def set_cell_color(self, i: int, j: int, couleur: str) -> None:
-        """Allows you to color a cell in the grid"""
+        """Set the background color of cell (i, j). Clears any image previously set on that cell.
+        Any character set via set_cell_char is drawn on top and is unaffected.
+
+        Color format: "#RRGGBB" or "#RRGGBBAA"
+        """
         ...
 
     @abstractmethod
     def set_cell_image(self, i: int, j: int, image: str) -> None:
-        """Allows you to display an image inside the cell of the grid.
-        Use the name you gave the image when you loaded it using the function `load_image`
+        """Display an image in cell (i, j), replacing any color previously set on that cell.
+        Any character set via set_cell_char is drawn on top and is unaffected.
+
+        `image` must be a name previously registered with load_image().
+        Raises KeyError if the image name is not found in the cache.
         """
         ...
 
     @abstractmethod
     def set_cell_char(self, i: int, j: int, char: str, color: str) -> None:
-        """Prints a character at the given coordinates in the grid"""
+        """Draw a single character on top of cell (i, j), over any color or image.
+        Pass an empty string to clear the character.
+
+        Color format: "#RRGGBB" or "#RRGGBBAA"
+        """
         assert len(char) < 2
         ...
 
@@ -88,16 +113,10 @@ class AbstractEngine(metaclass = ABCMeta):
         """
         ...
 
-    @abstractmethod
-    def show_init_dialog(self, text1: str, text2: str) -> None:
-        """Shows a screen with text1 and text2 right under.
-        Click on the screen to dismiss it then run the init callback
-        """
-        ...
 
     @abstractmethod
     def play_sound(self, path: str) -> None:
         """
-        Plays a sound file immediately when called, given its path. 
+        Plays a sound file immediately when called, given its path.
         """
         ...

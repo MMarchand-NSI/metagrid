@@ -42,6 +42,21 @@ jcurseur: int           # colonne du curseur
 mot_secret: str         # mot à deviner
 flag_game_over: bool    # True si le jeu est terminé
 
+jeu = metagrid.create(NB_LIGNES, NB_COLONNES, CELL_SIZE, 4)
+
+images = ["curseur", "faux", "malplace", "trouve", "vide"]
+for nom in images:
+    jeu.load_image(nom, f"assets/wordle/{nom}.png")
+
+
+def gagne() -> bool:
+    """
+    Gagné?
+    """
+    return all(mot_secret[j]==grille[icurseur][j] for j in range(5))
+
+
+@jeu.init
 def init():
     """
     Initialisation des variables du jeu
@@ -53,36 +68,7 @@ def init():
     flag_game_over = False
 
 
-def gagne() -> bool:
-    """
-    Gagné?
-    """
-    return all(mot_secret[j]==grille[icurseur][j] for j in range(5))
-
-
-def dessiner():
-    """
-    Dessiner toutes les lettres.
-    Pour les lignes au dessus du curseur, il faut choisir le sprite en fonction de la place des lettres.
-    Sinon il faut afficher vide sauf le curseur
-    """
-    global icurseur, jcurseur, grille
-    for i in range(NB_LIGNES):
-        for j in range(NB_COLONNES):
-            jeu.set_cell_char(i, j, grille[i][j], "#FFFFFF")
-            if i<icurseur:
-                if grille[i][j] == mot_secret[j]:
-                    jeu.set_cell_image(i,j, "trouve")
-                elif grille[i][j] in mot_secret:
-                    jeu.set_cell_image(i,j, "malplace")
-                else:
-                    jeu.set_cell_image(i,j, "faux")
-            elif (i,j)==(icurseur, jcurseur):
-                jeu.set_cell_image(i, j, "curseur")
-            else:
-                jeu.set_cell_image(i, j, "vide")
-
-
+@jeu.callback_key
 def touche(s: str):
     global icurseur, jcurseur, grille, flag_game_over
     if ord(s) == 65307:   # ESC
@@ -106,15 +92,34 @@ def touche(s: str):
         grille[icurseur][jcurseur] = s.upper()
         jcurseur += 1
 
+
+@jeu.draw
+def dessiner():
+    """
+    Dessiner toutes les lettres.
+    Pour les lignes au dessus du curseur, il faut choisir le sprite en fonction de la place des lettres.
+    Sinon il faut afficher vide sauf le curseur
+    """
+    global icurseur, jcurseur, grille
+    for i in range(NB_LIGNES):
+        for j in range(NB_COLONNES):
+            jeu.set_cell_char(i, j, grille[i][j], "#FFFFFF")
+            if i<icurseur:
+                if grille[i][j] == mot_secret[j]:
+                    jeu.set_cell_image(i,j, "trouve")
+                elif grille[i][j] in mot_secret:
+                    jeu.set_cell_image(i,j, "malplace")
+                else:
+                    jeu.set_cell_image(i,j, "faux")
+            elif (i,j)==(icurseur, jcurseur):
+                jeu.set_cell_image(i, j, "curseur")
+            else:
+                jeu.set_cell_image(i, j, "vide")
+
+
+@jeu.update
 def update():
     pass
 
 
-if __name__ == "__main__":
-    init()
-    jeu = metagrid.create(NB_LIGNES, NB_COLONNES, CELL_SIZE, 4)
-
-    images = ["curseur", "faux", "malplace", "trouve", "vide"]
-    for nom in images:
-        jeu.load_image(nom, f"assets/wordle/{nom}.png")
-    jeu.start(init, None, touche, dessiner, update)
+jeu.start()

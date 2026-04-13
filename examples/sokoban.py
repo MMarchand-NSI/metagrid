@@ -6,14 +6,19 @@ import sys
 grille: list[list[int]] # map du sokoban
 ikeeper: int            # indice ligne du gardien
 jkeeper: int            # indice colonne du gardien
-niveau: int             # niveau demandé
 flag_game_over: bool    # True si le jeu est terminé
 
-def init():
-    global ikeeper, jkeeper, grille, flag_game_over
-    grille = [[e for e in ligne] for ligne in maps[niveau]]
-    ikeeper, jkeeper = find_keeper()
-    flag_game_over = False
+niveau = int(sys.argv[1])
+if not (0 <= niveau < len(maps)):
+    raise ValueError(f"Le niveau doit être compris entre 0 et {len(maps)-1}")
+
+jeu = metagrid.create(len(maps[niveau]), len(maps[niveau][0]), 32, 0)
+
+# Chargement des tiles
+for nom in tiles.values():
+    jeu.load_image(nom, f"assets/sokoban/{nom}.png")
+
+jeu.play_sound(r"assets/sounds/sokoban_intro.mp3")
 
 
 def get_nb_colonnes():
@@ -35,6 +40,16 @@ def gagne() -> bool:
     """
     return not any(e==4 for ligne in grille for e in ligne)
 
+
+@jeu.init
+def init():
+    global ikeeper, jkeeper, grille, flag_game_over
+    grille = [[e for e in ligne] for ligne in maps[niveau]]
+    ikeeper, jkeeper = find_keeper()
+    flag_game_over = False
+
+
+@jeu.callback_key
 def touche(c: str):
     """
     D'après le déplacement voulu, on s'intéresse à la prochaine case,
@@ -88,26 +103,17 @@ def touche(c: str):
         flag_game_over = True
         jeu.play_sound(r"assets/sounds/victory.mp3")
 
+
+@jeu.draw
 def dessiner():
     for i in range(get_nb_lignes()):
         for j in range(get_nb_colonnes()):
             jeu.set_cell_image(i, j, tiles[grille[i][j]])
 
+
+@jeu.update
 def update():
     pass
 
-if __name__ == "__main__":
-    # Gestion du paramètre du programme
-    niveau = int(sys.argv[1])
-    if not (0 <= niveau < len(maps)):
-        raise ValueError(f"Le niveau doit être compris entre 0 et {len(maps)-1}")
 
-    #Initialisation
-    jeu = metagrid.create(get_nb_lignes(), get_nb_colonnes(), 32, 0)
-
-    jeu.play_sound(r"assets/sounds/sokoban_intro.mp3")
-
-    # Chargement des tiles
-    for nom in tiles.values():
-        jeu.load_image(nom, f"assets/sokoban/{nom}.png")
-    jeu.start(init, None, touche, dessiner, update)
+jeu.start()

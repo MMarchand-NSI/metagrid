@@ -21,7 +21,7 @@ VITESSE = 10
 #! ETAT DU JEU
 Coord: TypeAlias = tuple[int, int]
 
-# L'ensemble de ces variables est à mettre en global dans les fonctions 
+# L'ensemble de ces variables est à mettre en global dans les fonctions
 
 snake: file.File[Coord]  # Un snake est une file de coordonnées
 pomme: Coord             # coordonnées de la pomme
@@ -31,9 +31,15 @@ tete: Coord              # Coordonnées de la tete du snake
 supprime: Coord | None   # Coordonnées de la dernière queue supprimée
 game_over: bool          # flag indiquant si le jeu est terminé
 
+jeu = metagrid.create(HEIGHT, WIDTH, 20, 1)
+jeu.play_sound(r"assets/snake/snake.mp3")
 
-#! INITIALISATION
 
+#!############
+#! CALLBACKS #
+#!############
+
+@jeu.init
 def init():
     """
     Initialisation des variables globales
@@ -47,10 +53,8 @@ def init():
     spawn_pomme()
     game_over = False
 
-#!############
-#! CALLBACKS #
-#!############
 
+@jeu.callback_key
 def touche(car: str):
     """
     Callback de gestion des évènements clavier (déplacement du snake).
@@ -68,6 +72,8 @@ def touche(car: str):
     elif car == "s" and (dx, dy) != (-1, 0):
         (dx, dy) = (1, 0)
 
+
+@jeu.update
 def update():
     global snake, pomme, dx, dy, tete, supprime, game_over
 
@@ -76,7 +82,7 @@ def update():
 
     if jeu.frame_no % VITESSE != 0:
         return
-    
+
     tete = ( (tete[0]+dx) % WIDTH,  (tete[1]+dy) % HEIGHT )
 
     if tete in snake and (dx, dy) != (0,0):
@@ -91,15 +97,16 @@ def update():
 
     file.enfiler(tete, snake)
 
+
+@jeu.draw
 def draw():
-    global snake, pomme, dx, dy, tete, supprime, game_over
+    global snake, tete, supprime, game_over
     if game_over:
         return
     if supprime:
         jeu.set_cell_color(supprime[0], supprime[1], "#FFFFFF")
     jeu.set_cell_color(tete[0], tete[1], "#00FF00")
     jeu.set_cell_color(pomme[0], pomme[1], "#FF0000")
-
 
 
 #####################
@@ -116,8 +123,4 @@ def spawn_pomme():
         spawn_pomme()
 
 
-if __name__ == "__main__":
-    jeu = metagrid.create(HEIGHT, WIDTH, 20, 1)
-    jeu.play_sound(r"assets/snake/snake.mp3")
-
-    jeu.start(init, fn_click=lambda x, y:None, fn_key=touche, fn_update=update, fn_draw=draw)
+jeu.start()

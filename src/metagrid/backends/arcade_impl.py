@@ -62,25 +62,15 @@ class ArcadeEngine(AbstractEngine):
             pass
         
     @override
-    def start(self, init: Callable[[], None],
-                    fn_click: Callable[[int, int], None] | None,
-                    fn_key: Callable[[str], None] | None,
-                    fn_draw: Callable[[], None],
-                    fn_update: Callable[[], None]) -> None:
-        """Cette fonction permet de démarrer l'affichage
-        d'une grille de taille nb_lign x nb_colonnes.
-        la fonction chargée de la gestion du clic est la fonction fn_click
-        """
-        super().start(init, fn_click, fn_key, fn_draw, fn_update)
-
+    def start(self) -> None:
+        super().start()
         self.window.show_view(self.view)
-
         arcade.run()
 
 
     @override
     def exit(self) -> None:
-        pass
+        self.window.close()
 
     @override
     def set_cell_color(self, i: int, j: int, couleur: str) -> None:
@@ -101,6 +91,8 @@ class ArcadeEngine(AbstractEngine):
         """Color cell i,j with image in cache"""
         if i >= self.nrows or j >= self.ncols:
             return
+        if image not in self.view.textures:
+            raise KeyError(f"Image '{image}' not loaded. Call load_image('{image}', path) first.")
         i = self.nrows - 1 - i
         self.view.grid_sprites[i][j].color = _hex_to_rgb("#FFFFFFFF")
         self.view.grid_sprites[i][j].texture = self.view.textures[image]
@@ -135,10 +127,6 @@ class ArcadeEngine(AbstractEngine):
         self.view.textures[name] = arcade.load_texture(path)
         self.view.textures[name].width = self.cell_size
         self.view.textures[name].height = self.cell_size
-
-    @override
-    def show_init_dialog(self, text1: str, text2: str) -> None:
-        print("Not implemented yet")
 
     @override
     def play_sound(self, path: str) -> None:
@@ -238,24 +226,3 @@ class GameView(arcade.View):
         self.window.flip()
         self.window.set_update_rate(1/self.crafter.fps)
 """
-
-class InformationView(arcade.View):
-
-    def __init__(self, view: arcade.View, background_color: str) -> None:
-        self.window: Window = view.window
-        self.view: View = view
-
-        super().__init__(self.window, _hex_to_rgb(background_color) if background_color else None)
-
-    @override
-    def on_draw(self) -> None:
-        self.clear()
-        arcade.draw_text("Instructions Screen", self.window.width / 2, self.window.height / 2,
-                         arcade.color.BLACK, font_size=50, anchor_x="center")
-        arcade.draw_text("Click to advance", self.window.width / 2 , self.window.height / 2 - 75,
-                         arcade.color.GRAY, font_size=20, anchor_x="center")
-
-    @override
-    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
-        game_view = self.view
-        self.window.show_view(game_view)
