@@ -111,10 +111,6 @@ def dessiner():
                 jeu.set_cell_image(i, j, "vide")
 
 
-def update():
-    pass
-
-
 if __name__ == "__main__":
     jeu = metagrid.create(NB_LIGNES, NB_COLONNES, CELL_SIZE, 4)
     images = ["curseur", "faux", "malplace", "trouve", "vide"]
@@ -123,5 +119,4 @@ if __name__ == "__main__":
     jeu.init(init)
     jeu.callback_key(touche)
     jeu.draw(dessiner)
-    jeu.update(update)
     jeu.start()

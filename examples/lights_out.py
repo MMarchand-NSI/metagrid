@@ -75,11 +75,6 @@ def touche(key: str):
         init()
 
 
-def update():
-    """Aucune logique temporelle dans ce jeu : tout se passe sur événement."""
-    pass
-
-
 def draw():
     """Colorie chaque cellule selon son état : allumée, éteinte, ou victoire."""
     for i in range(NB_LIGNES):
@@ -97,6 +92,5 @@ if __name__ == "__main__":
     jeu.init(init)
     jeu.callback_click(cliquer)
     jeu.callback_key(touche)
-    jeu.update(update)
     jeu.draw(draw)
     jeu.start()

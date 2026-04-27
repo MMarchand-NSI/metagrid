@@ -145,10 +145,6 @@ def touche(key: str):
         ajouter_tuile()
 
 
-def update():
-    pass
-
-
 def draw():
     for i in range(TAILLE):
         for j in range(TAILLE):
@@ -160,6 +156,6 @@ if __name__ == "__main__":
     jeu = metagrid.create(TAILLE, TAILLE, TAILLE_CASE, 8)
     jeu.init(init)
     jeu.callback_key(touche)
-    jeu.update(update)
+
     jeu.draw(draw)
     jeu.start()

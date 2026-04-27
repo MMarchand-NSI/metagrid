@@ -102,10 +102,6 @@ def touche(key: str):
         jouer_dans_colonne(int(key) - 1)
 
 
-def update():
-    pass
-
-
 def draw():
     couleurs = {0: COULEUR_FOND, 1: COULEUR_J1, 2: COULEUR_J2}
     gagnantes = set(cellules_gagnantes)
@@ -122,6 +118,6 @@ if __name__ == "__main__":
     jeu.init(init)
     jeu.callback_click(cliquer)
     jeu.callback_key(touche)
-    jeu.update(update)
+
     jeu.draw(draw)
     jeu.start()
