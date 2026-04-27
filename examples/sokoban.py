@@ -100,10 +100,6 @@ def dessiner():
             jeu.set_cell_image(i, j, tiles[grille[i][j]])
 
 
-def update():
-    pass
-
-
 if __name__ == "__main__":
     niveau = int(sys.argv[1])
     if not (0 <= niveau < len(maps)):
@@ -116,5 +112,4 @@ if __name__ == "__main__":
     jeu.init(init)
     jeu.callback_key(touche)
     jeu.draw(dessiner)
-    jeu.update(update)
     jeu.start()

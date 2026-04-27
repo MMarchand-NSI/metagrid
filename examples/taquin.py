@@ -82,10 +82,6 @@ def affiche_grille():
                 jeu.set_cell_color(i, j, "#FFFFFF")
 
 
-def update():
-    pass
-
-
 if __name__ == "__main__":
     jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 0)
     for i in range(16):
@@ -93,5 +89,4 @@ if __name__ == "__main__":
     jeu.init(init)
     jeu.callback_click(cliquer)
     jeu.draw(affiche_grille)
-    jeu.update(update)
     jeu.start()

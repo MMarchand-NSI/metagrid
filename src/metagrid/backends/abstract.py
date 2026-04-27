@@ -56,10 +56,13 @@ class AbstractEngine(metaclass = ABCMeta):
 
     @abstractmethod
     def start(self) -> None:
-        """Start the game loop. Register all callbacks with decorators before calling this."""
+        """Start the game loop. Register all callbacks before calling this.
+
+        Required: init, draw.
+        Optional: update, callback_click, callback_key.
+        """
         assert self._init_fn is not None, "An init function must be registered with @game.init"
         assert self.fn_draw is not None, "A draw function must be registered with @game.draw"
-        assert self.fn_update is not None, "An update function must be registered with @game.update"
         self._init_fn()
         ...
 
