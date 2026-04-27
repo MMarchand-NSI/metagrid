@@ -1,4 +1,5 @@
 import metagrid
+from metagrid import AbstractEngine
 from random import choice, randint
 
 
@@ -10,11 +11,7 @@ grille: list[list[int]] # grille comportant le numero des tiles
 itrou: int              # indice ligne du trou
 jtrou: int              # indice colonne du trou
 
-jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 0)
-
-# Chargement de toutes les images dans le moteur
-for i in range(16):
-    jeu.load_image(f"tile{i}", f"assets/taquin/tile_{i}.png")
+jeu: AbstractEngine
 
 
 def melanger(n: int):
@@ -57,7 +54,6 @@ def bouge(i: int, j: int):
         # Afficher écran de fin
 
 
-@jeu.init
 def init():
     """
     Initialisation des variables du jeu.
@@ -69,12 +65,10 @@ def init():
     melanger(100)
 
 
-@jeu.callback_click
 def cliquer(i: int, j: int):
     bouge(i, j)
 
 
-@jeu.draw
 def affiche_grille():
     """
     Méthode d'affichage du jeu
@@ -88,9 +82,16 @@ def affiche_grille():
                 jeu.set_cell_color(i, j, "#FFFFFF")
 
 
-@jeu.update
 def update():
     pass
 
 
-jeu.start()
+if __name__ == "__main__":
+    jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 0)
+    for i in range(16):
+        jeu.load_image(f"tile{i}", f"assets/taquin/tile_{i}.png")
+    jeu.init(init)
+    jeu.callback_click(cliquer)
+    jeu.draw(affiche_grille)
+    jeu.update(update)
+    jeu.start()

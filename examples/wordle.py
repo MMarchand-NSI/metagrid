@@ -1,4 +1,5 @@
 import metagrid
+from metagrid import AbstractEngine
 from random import choice
 
 
@@ -42,11 +43,7 @@ jcurseur: int           # colonne du curseur
 mot_secret: str         # mot à deviner
 flag_game_over: bool    # True si le jeu est terminé
 
-jeu = metagrid.create(NB_LIGNES, NB_COLONNES, CELL_SIZE, 4)
-
-images = ["curseur", "faux", "malplace", "trouve", "vide"]
-for nom in images:
-    jeu.load_image(nom, f"assets/wordle/{nom}.png")
+jeu: AbstractEngine
 
 
 def gagne() -> bool:
@@ -56,7 +53,6 @@ def gagne() -> bool:
     return all(mot_secret[j]==grille[icurseur][j] for j in range(5))
 
 
-@jeu.init
 def init():
     """
     Initialisation des variables du jeu
@@ -68,7 +64,6 @@ def init():
     flag_game_over = False
 
 
-@jeu.callback_key
 def touche(s: str):
     global icurseur, jcurseur, grille, flag_game_over
     if ord(s) == 65307:   # ESC
@@ -93,7 +88,6 @@ def touche(s: str):
         jcurseur += 1
 
 
-@jeu.draw
 def dessiner():
     """
     Dessiner toutes les lettres.
@@ -117,9 +111,17 @@ def dessiner():
                 jeu.set_cell_image(i, j, "vide")
 
 
-@jeu.update
 def update():
     pass
 
 
-jeu.start()
+if __name__ == "__main__":
+    jeu = metagrid.create(NB_LIGNES, NB_COLONNES, CELL_SIZE, 4)
+    images = ["curseur", "faux", "malplace", "trouve", "vide"]
+    for nom in images:
+        jeu.load_image(nom, f"assets/wordle/{nom}.png")
+    jeu.init(init)
+    jeu.callback_key(touche)
+    jeu.draw(dessiner)
+    jeu.update(update)
+    jeu.start()

@@ -1,4 +1,5 @@
 import metagrid
+from metagrid import AbstractEngine
 from random import randint
 import file  # pyright: ignore[reportImplicitRelativeImport]
 from typing import TypeAlias
@@ -31,15 +32,27 @@ tete: Coord              # Coordonnées de la tete du snake
 supprime: Coord | None   # Coordonnées de la dernière queue supprimée
 game_over: bool          # flag indiquant si le jeu est terminé
 
-jeu = metagrid.create(HEIGHT, WIDTH, 20, 1)
-jeu.play_sound(r"assets/snake/snake.mp3")
+jeu: AbstractEngine
+
+
+#####################
+# FONCTIONS DU JEU  #
+#####################
+
+def spawn_pomme():
+    """
+    On profite pour introduire légèrement à la récursivité
+    """
+    global snake, pomme, dx, dy, tete, supprime, game_over
+    pomme = (randint(0, HEIGHT-1), randint(0, WIDTH-1))
+    if pomme in snake:
+        spawn_pomme()
 
 
 #!############
 #! CALLBACKS #
 #!############
 
-@jeu.init
 def init():
     """
     Initialisation des variables globales
@@ -54,7 +67,6 @@ def init():
     game_over = False
 
 
-@jeu.callback_key
 def touche(car: str):
     """
     Callback de gestion des évènements clavier (déplacement du snake).
@@ -73,7 +85,6 @@ def touche(car: str):
         (dx, dy) = (1, 0)
 
 
-@jeu.update
 def update():
     global snake, pomme, dx, dy, tete, supprime, game_over
 
@@ -98,7 +109,6 @@ def update():
     file.enfiler(tete, snake)
 
 
-@jeu.draw
 def draw():
     global snake, tete, supprime, game_over
     if game_over:
@@ -109,18 +119,11 @@ def draw():
     jeu.set_cell_color(pomme[0], pomme[1], "#FF0000")
 
 
-#####################
-# FONCTIONS DU JEU  #
-#####################
-
-def spawn_pomme():
-    """
-    On profite pour introduire légèrement à la récursivité
-    """
-    global snake, pomme, dx, dy, tete, supprime, game_over
-    pomme = (randint(0, HEIGHT-1), randint(0, WIDTH-1))
-    if pomme in snake:
-        spawn_pomme()
-
-
-jeu.start()
+if __name__ == "__main__":
+    jeu = metagrid.create(HEIGHT, WIDTH, 20, 1)
+    jeu.play_sound(r"assets/snake/snake.mp3")
+    jeu.init(init)
+    jeu.callback_key(touche)
+    jeu.update(update)
+    jeu.draw(draw)
+    jeu.start()

@@ -1,4 +1,5 @@
 import metagrid
+from metagrid import AbstractEngine
 from sokoban_maps import maps, tiles  # pyright: ignore[reportImplicitRelativeImport]
 import sys
 
@@ -7,18 +8,9 @@ grille: list[list[int]] # map du sokoban
 ikeeper: int            # indice ligne du gardien
 jkeeper: int            # indice colonne du gardien
 flag_game_over: bool    # True si le jeu est terminé
+niveau: int
 
-niveau = int(sys.argv[1])
-if not (0 <= niveau < len(maps)):
-    raise ValueError(f"Le niveau doit être compris entre 0 et {len(maps)-1}")
-
-jeu = metagrid.create(len(maps[niveau]), len(maps[niveau][0]), 32, 0)
-
-# Chargement des tiles
-for nom in tiles.values():
-    jeu.load_image(nom, f"assets/sokoban/{nom}.png")
-
-jeu.play_sound(r"assets/sounds/sokoban_intro.mp3")
+jeu: AbstractEngine
 
 
 def get_nb_colonnes():
@@ -41,7 +33,6 @@ def gagne() -> bool:
     return not any(e==4 for ligne in grille for e in ligne)
 
 
-@jeu.init
 def init():
     global ikeeper, jkeeper, grille, flag_game_over
     grille = [[e for e in ligne] for ligne in maps[niveau]]
@@ -49,7 +40,6 @@ def init():
     flag_game_over = False
 
 
-@jeu.callback_key
 def touche(c: str):
     """
     D'après le déplacement voulu, on s'intéresse à la prochaine case,
@@ -104,16 +94,27 @@ def touche(c: str):
         jeu.play_sound(r"assets/sounds/victory.mp3")
 
 
-@jeu.draw
 def dessiner():
     for i in range(get_nb_lignes()):
         for j in range(get_nb_colonnes()):
             jeu.set_cell_image(i, j, tiles[grille[i][j]])
 
 
-@jeu.update
 def update():
     pass
 
 
-jeu.start()
+if __name__ == "__main__":
+    niveau = int(sys.argv[1])
+    if not (0 <= niveau < len(maps)):
+        raise ValueError(f"Le niveau doit être compris entre 0 et {len(maps)-1}")
+
+    jeu = metagrid.create(len(maps[niveau]), len(maps[niveau][0]), 32, 0)
+    for nom in tiles.values():
+        jeu.load_image(nom, f"assets/sokoban/{nom}.png")
+    jeu.play_sound(r"assets/sounds/sokoban_intro.mp3")
+    jeu.init(init)
+    jeu.callback_key(touche)
+    jeu.draw(dessiner)
+    jeu.update(update)
+    jeu.start()
