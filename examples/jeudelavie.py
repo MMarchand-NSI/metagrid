@@ -81,9 +81,9 @@ def draw():
 
 if __name__ == "__main__":
     jeu = metagrid.create(HEIGHT, WIDTH, 20, 0)
-    jeu.init(init)
-    jeu.callback_click(cliquer)
-    jeu.callback_key(touche)
-    jeu.update(update)
-    jeu.draw(draw)
+    jeu.on_init(init)
+    jeu.on_click(cliquer)
+    jeu.on_key(touche)
+    jeu.on_update(update)
+    jeu.on_draw(draw)
     jeu.start()

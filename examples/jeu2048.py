@@ -154,8 +154,8 @@ def draw():
 
 if __name__ == "__main__":
     jeu = metagrid.create(TAILLE, TAILLE, TAILLE_CASE, 8)
-    jeu.init(init)
-    jeu.callback_key(touche)
+    jeu.on_init(init)
+    jeu.on_key(touche)
 
-    jeu.draw(draw)
+    jeu.on_draw(draw)
     jeu.start()

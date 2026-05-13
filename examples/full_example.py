@@ -159,11 +159,11 @@ if __name__ == "__main__":
 
     # Enregistrer les callbacks : on passe simplement la fonction (sans l'appeler).
     # metagrid se chargera de l'appeler au bon moment.
-    game.init(init)             # appelée une fois au démarrage
-    game.callback_click(clique) # appelée à chaque clic sur la grille
-    game.callback_key(touche)   # appelée à chaque touche du clavier
-    game.update(update)         # appelée à chaque frame, avant draw
-    game.draw(draw)             # appelée à chaque frame, après update
+    game.on_init(init)             # appelée une fois au démarrage
+    game.on_click(clique) # appelée à chaque clic sur la grille
+    game.on_key(touche)   # appelée à chaque touche du clavier
+    game.on_update(update)         # appelée à chaque frame, avant draw
+    game.on_draw(draw)             # appelée à chaque frame, après update
 
     # Lancer la boucle de jeu. Cette ligne est bloquante :
     # le programme reste ici jusqu'à ce que l'utilisateur ferme la fenêtre.

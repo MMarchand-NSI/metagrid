@@ -177,16 +177,16 @@ class GameView(arcade.View):
         self.crafter.frame_no += 1 #! Incrémentation du frame_no
         #print("test")
         _ = super().on_update(delta_time)
-        if self.crafter.fn_update:
-            self.crafter.fn_update()
+        if self.crafter.on_update_fn:
+            self.crafter.on_update_fn()
 
     @override
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         logger.debug(f"on_key_press({symbol}, {modifiers})")
         _ = super().on_key_press(symbol, modifiers)
         #print(symbol, chr(symbol), modifiers)
-        if self.crafter.fn_key:
-            self.crafter.fn_key(chr(symbol))
+        if self.crafter.on_key_fn:
+            self.crafter.on_key_fn(chr(symbol))
 #            self.immediate_update()
 
     @override
@@ -194,8 +194,8 @@ class GameView(arcade.View):
         """
         Render the screen.
         """
-        if self.crafter.fn_draw:
-            self.crafter.fn_draw()
+        if self.crafter.on_draw_fn:
+            self.crafter.on_draw_fn()
         self.clear()
         self.grid_sprite_list.draw()
         #print(self.grid_chars)
@@ -220,9 +220,9 @@ class GameView(arcade.View):
         column = int(x // (self.crafter.cell_size + self.crafter.margin))
         row = self.crafter.nrows - 1 - int(y // (self.crafter.cell_size + self.crafter.margin))
         logger.debug(f"Grid coordinates: ({row}, {column})")
-        if self.crafter.fn_click:
+        if self.crafter.on_click_fn:
             button_name = self._BUTTON_MAP.get(button, "left")
-            self.crafter.fn_click(row, column, button_name)
+            self.crafter.on_click_fn(row, column, button_name)
             #self.immediate_update()
 
 """

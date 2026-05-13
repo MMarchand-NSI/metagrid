@@ -102,7 +102,7 @@ def draw():
 
 if __name__ == "__main__":
     game = metagrid.create(LARGEUR, HAUTEUR, 50, 1)
-    game.init(init)
-    game.callback_click(click)
-    game.draw(draw)
+    game.on_init(init)
+    game.on_click(click)
+    game.on_draw(draw)
     game.start()
