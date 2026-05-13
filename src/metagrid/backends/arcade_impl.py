@@ -62,10 +62,16 @@ class ArcadeEngine(AbstractEngine):
         WINDOW_TITLE = ""
 
         self.window: Window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
-        
-        # Charger l'icône depuis assets/
+
         self._load_icon()
-        
+
+        # Texture blanche réutilisée par set_cell_color (#11)
+        _white = Image.new("RGBA", (self.cell_size, self.cell_size), (255, 255, 255, 255))
+        self._white_texture: arcade.Texture = arcade.Texture(name="__white__", image=_white)
+
+        # Cache des sons (#12)
+        self._sound_cache: dict[str, Sound] = {}
+
         self.view: GameView = GameView(self)
         self.frame_no: int = 0
     
@@ -93,25 +99,20 @@ class ArcadeEngine(AbstractEngine):
     def exit(self) -> None:
         self.window.close()
 
+    def _check_bounds(self, i: int, j: int) -> None:
+        if not (0 <= i < self.nrows and 0 <= j < self.ncols):
+            raise IndexError(f"Cell ({i}, {j}) is out of bounds for grid {self.nrows}×{self.ncols}")
+
     @override
     def set_cell_color(self, i: int, j: int, couleur: str) -> None:
-        """permet de colorier une case de la grille"""
-        if i >= self.nrows or j >= self.ncols:
-            raise IndexError("Index of of bound")
+        self._check_bounds(i, j)
         i = self.nrows - 1 - i
-
-        # TODO improve by not recreating each time
-        empty_image = Image.new("RGBA", (self.cell_size, self.cell_size), (255, 255, 255, 255))
-        empty_texture = arcade.Texture(name="vide", image=empty_image)
-
-        self.view.grid_sprites[i][j].texture = empty_texture
+        self.view.grid_sprites[i][j].texture = self._white_texture
         self.view.grid_sprites[i][j].color = _hex_to_rgb(couleur)
 
     @override
     def set_cell_image(self, i: int, j: int, image: str) -> None:
-        """Color cell i,j with image in cache"""
-        if i >= self.nrows or j >= self.ncols:
-            return
+        self._check_bounds(i, j)
         if image not in self.view.textures:
             raise KeyError(f"Image '{image}' not loaded. Call load_image('{image}', path) first.")
         i = self.nrows - 1 - i
@@ -146,14 +147,14 @@ class ArcadeEngine(AbstractEngine):
 
     @override
     def load_image(self, name: str, path: str) -> None:
-        self.view.textures[name] = arcade.load_texture(path)
-        self.view.textures[name].width = self.cell_size
-        self.view.textures[name].height = self.cell_size
+        img = Image.open(path).convert("RGBA").resize((self.cell_size, self.cell_size), Image.Resampling.LANCZOS)
+        self.view.textures[name] = arcade.Texture(name=name, image=img)
 
     @override
     def play_sound(self, path: str) -> None:
-        son: Sound = arcade.load_sound(path)
-        _ = son.play()
+        if path not in self._sound_cache:
+            self._sound_cache[path] = arcade.load_sound(path)
+        _ = self._sound_cache[path].play()
 
 
 
