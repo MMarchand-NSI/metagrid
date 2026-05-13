@@ -1,6 +1,5 @@
 from pathlib import Path
 from arcade.sound import Sound
-from arcade.application import View
 from arcade.application import Window
 from arcade.sprite.colored import SpriteSolidColor
 from arcade.texture.texture import Texture
@@ -10,7 +9,6 @@ import pyglet.image
 
 from arcade.types import Color, RGBOrA255
 from .abstract import AbstractEngine
-from typing import Callable
 from PIL import Image
 import arcade
 import logging
@@ -18,6 +16,12 @@ import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+_BUTTON_MAP: dict[int, str] = {
+    arcade.MOUSE_BUTTON_LEFT:   "left",
+    arcade.MOUSE_BUTTON_RIGHT:  "right",
+    arcade.MOUSE_BUTTON_MIDDLE: "middle",
+}
 
 _KEY_MAP: dict[int, str] = {
     arcade.key.LEFT:      "left",
@@ -55,8 +59,8 @@ def _hex_to_rgb(hex_color: str) -> RGBOrA255:
 
 
 class ArcadeEngine(AbstractEngine):
-    def __init__(self, nb_lignes: int, nb_colonnes: int, cell_size: int, margin: int) -> None:
-        super().__init__(nb_lignes, nb_colonnes, cell_size, margin)
+    def __init__(self, nrows: int, ncols: int, cell_size: int, margin: int) -> None:
+        super().__init__(nrows, ncols, cell_size, margin)
         WINDOW_WIDTH = (self.cell_size + self.margin) * self.ncols + self.margin
         WINDOW_HEIGHT = (self.cell_size + self.margin) * self.nrows + self.margin
         WINDOW_TITLE = ""
@@ -73,7 +77,6 @@ class ArcadeEngine(AbstractEngine):
         self._sound_cache: dict[str, Sound] = {}
 
         self.view: GameView = GameView(self)
-        self.frame_no: int = 0
     
     def _load_icon(self) -> None:
         """Load window icon from package assets directory."""
@@ -104,11 +107,11 @@ class ArcadeEngine(AbstractEngine):
             raise IndexError(f"Cell ({i}, {j}) is out of bounds for grid {self.nrows}×{self.ncols}")
 
     @override
-    def set_cell_color(self, i: int, j: int, couleur: str) -> None:
+    def set_cell_color(self, i: int, j: int, color: str) -> None:
         self._check_bounds(i, j)
         i = self.nrows - 1 - i
         self.view.grid_sprites[i][j].texture = self._white_texture
-        self.view.grid_sprites[i][j].color = _hex_to_rgb(couleur)
+        self.view.grid_sprites[i][j].color = _hex_to_rgb(color)
 
     @override
     def set_cell_image(self, i: int, j: int, image: str) -> None:
@@ -229,12 +232,6 @@ class GameView(arcade.View):
                 if text_obj:
                     text_obj.draw()
 
-    _BUTTON_MAP = {
-        arcade.MOUSE_BUTTON_LEFT: "left",
-        arcade.MOUSE_BUTTON_RIGHT: "right",
-        arcade.MOUSE_BUTTON_MIDDLE: "middle",
-    }
-
     @override
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
         """
@@ -245,15 +242,7 @@ class GameView(arcade.View):
         row = self.crafter.nrows - 1 - int(y // (self.crafter.cell_size + self.crafter.margin))
         logger.debug(f"Grid coordinates: ({row}, {column})")
         if self.crafter.on_click_fn and 0 <= row < self.crafter.nrows and 0 <= column < self.crafter.ncols:
-            button_name = self._BUTTON_MAP.get(button, "left")
+            button_name = _BUTTON_MAP.get(button, "left")
             self.crafter.on_click_fn(row, column, button_name)
             #self.immediate_update()
 
-"""
-    def immediate_update(self):
-        self.on_update(0)
-        self.window.set_update_rate(0)
-        self.on_draw()
-        self.window.flip()
-        self.window.set_update_rate(1/self.crafter.fps)
-"""

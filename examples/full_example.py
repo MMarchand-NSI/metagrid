@@ -11,7 +11,7 @@ Structure d'un programme metagrid
 Un programme metagrid suit toujours le même schéma en cinq étapes :
 
     1. Définir les variables d'état du jeu (globales).
-    2. Écrire les fonctions callbacks (init, update, draw, clique, touche).
+    2. Écrire les fonctions callbacks (on_init, on_update, on_draw, on_click, on_key).
     3. Dans le bloc if __name__ == "__main__" :
         a. Créer le moteur avec metagrid.create().
         b. Enregistrer chaque callback.
