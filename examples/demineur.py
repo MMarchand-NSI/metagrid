@@ -72,9 +72,11 @@ def get_mines_voisines(i: int, j: int) -> int:
     """
     Compte le nombre de mines dans le voisinage de la case (i, j).
 
-    On parcourt le carré 3×3 centré sur (i, j), en restant dans les bornes
-    de la grille grâce à max/min, et en excluant la case elle-même.
-    Le résultat (0 à 8) est stocké dans cellule.nb_voisins à l'initialisation.
+    On explore les 8 directions possibles à l'aide de déplacements (di, dj)
+    où di et dj valent chacun -1, 0 ou +1. La paire (0, 0) désigne la case
+    elle-même et est exclue par la condition (di != 0 or dj != 0).
+    On vérifie aussi que la case voisine (i+di, j+dj) est bien dans la grille
+    avant d'y accéder, pour éviter les débordements aux bords.
 
     Paramètres
     ----------
@@ -84,10 +86,10 @@ def get_mines_voisines(i: int, j: int) -> int:
         Indice de colonne de la case.
     """
     res = 0
-    for vi in range(max(0, i-1), min(HAUTEUR, i+2)):
-        for vj in range(max(0, j-1), min(LARGEUR, j+2)):
-            if not (vi == i and vj == j):
-                res += grille[vi][vj].est_mine
+    for di in range(-1, 2):
+        for dj in range(-1, 2):
+            if (di != 0 or dj != 0) and 0 <= i + di < HAUTEUR and 0 <= j + dj < LARGEUR:
+                res += grille[i + di][j + dj].est_mine
     return res
 
 
@@ -145,10 +147,12 @@ def decouvre(i: int, j: int):
     cell = grille[i][j]
     cell.revelee = True
     if cell.nb_voisins == 0:
-        for vi in range(max(0, i-1), min(HAUTEUR, i+2)):
-            for vj in range(max(0, j-1), min(LARGEUR, j+2)):
-                if not grille[vi][vj].revelee and not grille[vi][vj].est_mine:
-                    decouvre(vi, vj)
+        for di in range(-1, 2):
+            for dj in range(-1, 2):
+                if (di != 0 or dj != 0) and 0 <= i + di < HAUTEUR and 0 <= j + dj < LARGEUR:
+                    voisin = grille[i + di][j + dj]
+                    if not voisin.revelee and not voisin.est_mine:
+                        decouvre(i + di, j + dj)
 
 
 def click(i: int, j: int, button: str):
