@@ -48,7 +48,7 @@ def init():
     flag_game_over = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     """Retourne la carte cliquée et vérifie si une paire est formée."""
     global delai, flag_game_over
     # Ignorer le clic si le délai est actif, si la carte est déjà trouvée ou déjà retournée

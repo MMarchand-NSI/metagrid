@@ -71,7 +71,7 @@ def init():
     print("Jeu initialisé")
 
 
-def clique(i: int, j: int):
+def clique(i: int, j: int, button: str):
     """
     Appelée chaque fois que l'utilisateur clique sur une cellule de la grille.
 
@@ -81,8 +81,10 @@ def clique(i: int, j: int):
         Indice de ligne de la cellule cliquée (0 = ligne du haut).
     j : int
         Indice de colonne de la cellule cliquée (0 = colonne de gauche).
+    button : str
+        Bouton utilisé : "left", "right" ou "middle".
     """
-    print(f"Case ({i}, {j}) cliquée")
+    print(f"Case ({i}, {j}) cliquée avec le bouton {button}")
 
 
 def touche(key: str):

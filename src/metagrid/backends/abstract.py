@@ -18,7 +18,7 @@ class AbstractEngine(metaclass = ABCMeta):
         self.frame_no: int = 0           # Holds the number of frame since start
 
         self._init_fn: Callable[[], None] | None = None
-        self.fn_click: Callable[[int, int], None] | None = None
+        self.fn_click: Callable[[int, int, str], None] | None = None
         self.fn_key: Callable[[str], None] | None = None
         self.fn_draw: Callable[[], None] | None = None
         self.fn_update: Callable[[], None] | None = None
@@ -29,9 +29,9 @@ class AbstractEngine(metaclass = ABCMeta):
         self._init_fn = fn
         return fn
 
-    def callback_click(self, fn: Callable[[int, int], None]) -> Callable[[int, int], None]:
+    def callback_click(self, fn: Callable[[int, int, str], None]) -> Callable[[int, int, str], None]:
         """Decorator. Register the function called when a cell is clicked.
-        The function receives (i, j) — the grid coordinates of the clicked cell.
+        The function receives (i, j, button) — grid coordinates and the button: "left", "right", or "middle".
         """
         self.fn_click = fn
         return fn

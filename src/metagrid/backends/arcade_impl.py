@@ -205,6 +205,12 @@ class GameView(arcade.View):
                 if text_obj:
                     text_obj.draw()
 
+    _BUTTON_MAP = {
+        arcade.MOUSE_BUTTON_LEFT: "left",
+        arcade.MOUSE_BUTTON_RIGHT: "right",
+        arcade.MOUSE_BUTTON_MIDDLE: "middle",
+    }
+
     @override
     def on_mouse_press(self, x: int, y: int, button: int, modifiers: int) -> None:
         """
@@ -215,7 +221,8 @@ class GameView(arcade.View):
         row = self.crafter.nrows - 1 - int(y // (self.crafter.cell_size + self.crafter.margin))
         logger.debug(f"Grid coordinates: ({row}, {column})")
         if self.crafter.fn_click:
-            self.crafter.fn_click(row, column)
+            button_name = self._BUTTON_MAP.get(button, "left")
+            self.crafter.fn_click(row, column, button_name)
             #self.immediate_update()
 
 """

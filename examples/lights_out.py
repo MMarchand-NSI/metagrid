@@ -59,7 +59,7 @@ def init():
     flag_game_over = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     """Joue un coup sur la cellule (i, j) et vérifie la victoire."""
     global flag_game_over
     if flag_game_over:

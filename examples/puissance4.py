@@ -90,7 +90,7 @@ def init():
     flag_game_over = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     # On ignore la ligne cliquée : seule la colonne compte (gravité)
     jouer_dans_colonne(j)
 

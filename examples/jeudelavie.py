@@ -38,7 +38,7 @@ def init():
     running = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     """
     Callback de l'évènement click. i et j sont les coordonnées de la grille cliquées
     """

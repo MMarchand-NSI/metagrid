@@ -65,7 +65,7 @@ def init():
     melanger(100)
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     bouge(i, j)
 
 
