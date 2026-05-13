@@ -13,6 +13,20 @@ NB_MINES = 10
 #? ETAT DU JEU
 
 class Cellule:
+    """
+    Représente une case de la grille du démineur.
+
+    Attributs
+    ---------
+    est_mine : bool
+        True si cette case cache une mine.
+    nb_voisins : int
+        Nombre de mines dans les 8 cases adjacentes (calculé une fois à l'init).
+    revelee : bool
+        True si la case a été découverte par le joueur.
+    drapeau : bool
+        True si le joueur a posé un drapeau sur cette case (clic droit).
+    """
     est_mine: bool
     nb_voisins: int
     revelee: bool
@@ -30,6 +44,13 @@ game: AbstractEngine
 
 
 def init():
+    """
+    Initialise une nouvelle partie.
+
+    Crée une grille vierge, place NB_MINES mines à des positions aléatoires
+    (sans doublons), puis calcule pour chaque case le nombre de mines voisines.
+    Cette fonction est appelée automatiquement par metagrid au démarrage.
+    """
     global grille, game_over
     game_over = False
     grille = [[Cellule() for _ in range(LARGEUR)] for _ in range(HAUTEUR)]
@@ -48,6 +69,20 @@ def init():
 
 
 def get_mines_voisines(i: int, j: int) -> int:
+    """
+    Compte le nombre de mines dans le voisinage de la case (i, j).
+
+    On parcourt le carré 3×3 centré sur (i, j), en restant dans les bornes
+    de la grille grâce à max/min, et en excluant la case elle-même.
+    Le résultat (0 à 8) est stocké dans cellule.nb_voisins à l'initialisation.
+
+    Paramètres
+    ----------
+    i : int
+        Indice de ligne de la case.
+    j : int
+        Indice de colonne de la case.
+    """
     res = 0
     for vi in range(max(0, i-1), min(HAUTEUR, i+2)):
         for vj in range(max(0, j-1), min(LARGEUR, j+2)):
@@ -57,6 +92,11 @@ def get_mines_voisines(i: int, j: int) -> int:
 
 
 def reveler_toutes_mines():
+    """
+    Marque toutes les mines de la grille comme révélées.
+
+    Appelée lors d'un game over pour que draw() puisse les afficher.
+    """
     for i in range(HAUTEUR):
         for j in range(LARGEUR):
             if grille[i][j].est_mine:
@@ -64,6 +104,15 @@ def reveler_toutes_mines():
 
 
 def est_gagne() -> bool:
+    """
+    Vérifie si le joueur a gagné la partie.
+
+    La condition de victoire au démineur est : toutes les cases qui ne sont
+    pas des mines ont été révélées. Les mines restent cachées (avec ou sans
+    drapeau), seules les cases sûres doivent l'être toutes.
+
+    Retourne True si la partie est gagnée, False sinon.
+    """
     return all(
         grille[i][j].revelee
         for i in range(HAUTEUR)
@@ -73,6 +122,26 @@ def est_gagne() -> bool:
 
 
 def decouvre(i: int, j: int):
+    """
+    Révèle la case (i, j) et propage récursivement si elle n'a aucun voisin miné.
+
+    C'est l'algorithme de « flood fill » (remplissage par diffusion) du démineur :
+    - On révèle la case courante.
+    - Si elle a au moins un voisin miné (nb_voisins > 0), on s'arrête là :
+      le chiffre affiché suffit à guider le joueur.
+    - Si elle n'a aucun voisin miné (nb_voisins == 0), on appelle récursivement
+      decouvre() sur chacun de ses voisins non encore révélés et non minés.
+
+    Cette récursion s'arrête naturellement car chaque case ne peut être révélée
+    qu'une seule fois (on vérifie `not grille[vi][vj].revelee` avant de recurser).
+
+    Paramètres
+    ----------
+    i : int
+        Indice de ligne de la case à révéler.
+    j : int
+        Indice de colonne de la case à révéler.
+    """
     cell = grille[i][j]
     cell.revelee = True
     if cell.nb_voisins == 0:
@@ -83,6 +152,30 @@ def decouvre(i: int, j: int):
 
 
 def click(i: int, j: int, button: str):
+    """
+    Gère un clic sur la case (i, j).
+
+    Clic gauche sur une case non révélée et sans drapeau :
+      - Si c'est une mine → game over : on révèle toutes les mines.
+      - Sinon → on découvre la case (avec propagation si nécessaire),
+        puis on vérifie si la partie est gagnée.
+
+    Clic droit sur une case non révélée :
+      - Pose ou retire un drapeau. Le drapeau est un marqueur visuel que
+        le joueur pose pour signaler une mine supposée ; il empêche un clic
+        gauche accidentel sur cette case.
+
+    Si la partie est terminée (game_over), tous les clics sont ignorés.
+
+    Paramètres
+    ----------
+    i : int
+        Indice de ligne de la case cliquée.
+    j : int
+        Indice de colonne de la case cliquée.
+    button : str
+        Bouton de la souris : "left" ou "right".
+    """
     global game_over
     if game_over:
         return
@@ -102,6 +195,18 @@ def click(i: int, j: int, button: str):
 
 
 def draw():
+    """
+    Dessine l'état courant de la grille, case par case.
+
+    Chaque case est affichée selon son état, par ordre de priorité :
+      - Drapeau        → fond gris, lettre F rouge
+      - Non révélée    → fond gris, pas de caractère
+      - Mine révélée   → fond rouge, croix blanche (game over)
+      - Chiffre        → fond blanc, nombre bleu (nb de mines voisines)
+      - Case vide      → fond blanc, pas de caractère
+
+    Cette fonction est appelée automatiquement par metagrid à chaque frame.
+    """
     for i in range(HAUTEUR):
         for j in range(LARGEUR):
             case = grille[i][j]
