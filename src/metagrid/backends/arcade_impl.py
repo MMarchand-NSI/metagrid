@@ -19,6 +19,27 @@ import re
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_KEY_MAP: dict[int, str] = {
+    arcade.key.LEFT:      "left",
+    arcade.key.RIGHT:     "right",
+    arcade.key.UP:        "up",
+    arcade.key.DOWN:      "down",
+    arcade.key.ESCAPE:    "escape",
+    arcade.key.ENTER:     "enter",
+    arcade.key.RETURN:    "enter",
+    arcade.key.BACKSPACE: "backspace",
+    arcade.key.DELETE:    "delete",
+    arcade.key.TAB:       "tab",
+    arcade.key.HOME:      "home",
+    arcade.key.END:       "end",
+    arcade.key.PAGEUP:    "pageup",
+    arcade.key.PAGEDOWN:  "pagedown",
+    arcade.key.F1:  "f1",  arcade.key.F2:  "f2",  arcade.key.F3:  "f3",
+    arcade.key.F4:  "f4",  arcade.key.F5:  "f5",  arcade.key.F6:  "f6",
+    arcade.key.F7:  "f7",  arcade.key.F8:  "f8",  arcade.key.F9:  "f9",
+    arcade.key.F10: "f10", arcade.key.F11: "f11", arcade.key.F12: "f12",
+}
+
 
 def _hex_to_rgb(hex_color: str) -> RGBOrA255:
     assert bool(re.fullmatch(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})", hex_color)), f"Bad color format for #RRGGBB/#RRGGBBAA: {hex_color}"
@@ -105,8 +126,8 @@ class ArcadeEngine(AbstractEngine):
             sprite = self.view.grid_sprites[i_flipped][j]
 
             if char:
-                # Create or update the Text
-                if self.view.grid_chars[i][j] is None:
+                existing = self.view.grid_chars[i][j]
+                if existing is None:
                     self.view.grid_chars[i][j] = arcade.Text(
                         text=char,
                         x=sprite.center_x,
@@ -116,8 +137,9 @@ class ArcadeEngine(AbstractEngine):
                         anchor_x="center",
                         anchor_y="center"
                     )
-                elif self.view.grid_chars[i][j].text != char: #type: ignore  # pyright: ignore[reportOptionalMemberAccess]
-                    self.view.grid_chars[i][j].text = char #type: ignore  # pyright: ignore[reportOptionalMemberAccess]
+                else:
+                    existing.text = char
+                    existing.color = _hex_to_rgb(color)
             else:
                 # Clear the character
                 self.view.grid_chars[i][j] = None
@@ -186,7 +208,8 @@ class GameView(arcade.View):
         _ = super().on_key_press(symbol, modifiers)
         #print(symbol, chr(symbol), modifiers)
         if self.crafter.on_key_fn:
-            self.crafter.on_key_fn(chr(symbol))
+            key_name = _KEY_MAP.get(symbol, chr(symbol) if symbol < 128 else f"key_{symbol}")
+            self.crafter.on_key_fn(key_name)
 #            self.immediate_update()
 
     @override
@@ -220,7 +243,7 @@ class GameView(arcade.View):
         column = int(x // (self.crafter.cell_size + self.crafter.margin))
         row = self.crafter.nrows - 1 - int(y // (self.crafter.cell_size + self.crafter.margin))
         logger.debug(f"Grid coordinates: ({row}, {column})")
-        if self.crafter.on_click_fn:
+        if self.crafter.on_click_fn and 0 <= row < self.crafter.nrows and 0 <= column < self.crafter.ncols:
             button_name = self._BUTTON_MAP.get(button, "left")
             self.crafter.on_click_fn(row, column, button_name)
             #self.immediate_update()
