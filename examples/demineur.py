@@ -7,10 +7,10 @@ from random import randint
 
 HAUTEUR = 10
 LARGEUR = 10
-NB_MINES = 10
+NB_MINES = 20
 
 
-#? ETAT DU JEU
+#? STRUCTURE DE CELLULE
 
 class Cellule:
     """
@@ -38,10 +38,15 @@ class Cellule:
         self.revelee = False
         self.drapeau = False
 
+
+#? ETAT DU JEU
+
 grille: list[list[Cellule]]
 game_over: bool
 game: AbstractEngine
 
+
+#? INITIALISATION DU JEU
 
 def init():
     """
@@ -67,6 +72,9 @@ def init():
         for j in range(LARGEUR):
             grille[i][j].nb_voisins = get_mines_voisines(i, j)
 
+
+
+#? FONCTIONS UTILITAIRES DU JEU
 
 def get_mines_voisines(i: int, j: int) -> int:
     """
@@ -154,6 +162,8 @@ def decouvre(i: int, j: int):
                     if not voisin.revelee and not voisin.est_mine:
                         decouvre(i + di, j + dj)
 
+
+#? CALLBACKS
 
 def click(i: int, j: int, button: str):
     """

@@ -150,7 +150,7 @@ class ArcadeEngine(AbstractEngine):
 
     @override
     def load_image(self, name: str, path: str) -> None:
-        img = Image.open(path).convert("RGBA").resize((self.cell_size, self.cell_size), Image.Resampling.LANCZOS)
+        img = Image.open(path).convert("RGBA").resize((self.cell_size, self.cell_size), Image.Resampling.LANCZOS)  # type: ignore[arg-type]
         self.view.textures[name] = arcade.Texture(name=name, image=img)
 
     @override
