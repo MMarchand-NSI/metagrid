@@ -90,11 +90,13 @@ class AbstractEngine(metaclass = ABCMeta):
 
     @abstractmethod
     def set_cell_char(self, i: int, j: int, char: str, color: str) -> None:
-        """Draw text on top of cell (i, j), over any color or image.
-        Pass an empty string to clear the text.
+        """Draw a single character on top of cell (i, j), over any color or image.
+        Pass an empty string to clear the character.
 
         Color format: "#RRGGBB" or "#RRGGBBAA"
         """
+        if len(char) > 1:
+            raise ValueError(f"char must be a single character or empty string, got {char!r}")
         ...
 
 
