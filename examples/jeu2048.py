@@ -145,11 +145,22 @@ def touche(key: str):
         ajouter_tuile()
 
 
+COULEUR_TEXTE: dict[int, str] = {
+    0: "#CDC1B4",   # invisible sur fond vide
+    2: "#776E65",
+    4: "#776E65",
+}
+TEXTE_CLAIR = "#F9F6F2"   # pour toutes les tuiles >= 8
+
+
 def draw():
     for i in range(TAILLE):
         for j in range(TAILLE):
             val = grille[i][j]
             jeu.set_cell_color(i, j, COULEURS.get(val, "#3C3A32"))
+            texte = str(val) if val != 0 else ""
+            couleur_texte = COULEUR_TEXTE.get(val, TEXTE_CLAIR)
+            jeu.set_cell_char(i, j, texte, couleur_texte)
 
 
 if __name__ == "__main__":
