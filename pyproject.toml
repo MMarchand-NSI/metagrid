@@ -23,8 +23,12 @@ classifiers = [
 
 dependencies = [
     "arcade>=3.3.0",
-    "pillow>=11"
+    "pillow>=11",
+    "websockets>=16.0",
 ]
+
+[project.optional-dependencies]
+network = ["websockets>=16.0"]
 
 
 [project.urls]
