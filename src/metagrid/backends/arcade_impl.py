@@ -17,6 +17,33 @@ import re
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+_BUTTON_MAP: dict[int, str] = {
+    arcade.MOUSE_BUTTON_LEFT:   "left",
+    arcade.MOUSE_BUTTON_RIGHT:  "right",
+    arcade.MOUSE_BUTTON_MIDDLE: "middle",
+}
+
+_KEY_MAP: dict[int, str] = {
+    arcade.key.LEFT:      "left",
+    arcade.key.RIGHT:     "right",
+    arcade.key.UP:        "up",
+    arcade.key.DOWN:      "down",
+    arcade.key.ESCAPE:    "escape",
+    arcade.key.ENTER:     "enter",
+    arcade.key.RETURN:    "enter",
+    arcade.key.BACKSPACE: "backspace",
+    arcade.key.DELETE:    "delete",
+    arcade.key.TAB:       "tab",
+    arcade.key.HOME:      "home",
+    arcade.key.END:       "end",
+    arcade.key.PAGEUP:    "pageup",
+    arcade.key.PAGEDOWN:  "pagedown",
+    arcade.key.F1:  "f1",  arcade.key.F2:  "f2",  arcade.key.F3:  "f3",
+    arcade.key.F4:  "f4",  arcade.key.F5:  "f5",  arcade.key.F6:  "f6",
+    arcade.key.F7:  "f7",  arcade.key.F8:  "f8",  arcade.key.F9:  "f9",
+    arcade.key.F10: "f10", arcade.key.F11: "f11", arcade.key.F12: "f12",
+}
+
 
 def _hex_to_rgb(hex_color: str) -> RGBOrA255:
     assert bool(re.fullmatch(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})", hex_color)), f"Bad color format for #RRGGBB/#RRGGBBAA: {hex_color}"
@@ -32,19 +59,24 @@ def _hex_to_rgb(hex_color: str) -> RGBOrA255:
 
 
 class ArcadeEngine(AbstractEngine):
-    def __init__(self, nb_lignes: int, nb_colonnes: int, cell_size: int, margin: int) -> None:
-        super().__init__(nb_lignes, nb_colonnes, cell_size, margin)
+    def __init__(self, nrows: int, ncols: int, cell_size: int, margin: int) -> None:
+        super().__init__(nrows, ncols, cell_size, margin)
         WINDOW_WIDTH = (self.cell_size + self.margin) * self.ncols + self.margin
         WINDOW_HEIGHT = (self.cell_size + self.margin) * self.nrows + self.margin
         WINDOW_TITLE = ""
 
         self.window: Window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
-        
-        # Charger l'icône depuis assets/
+
         self._load_icon()
-        
+
+        # Texture blanche réutilisée par set_cell_color (#11)
+        _white = Image.new("RGBA", (self.cell_size, self.cell_size), (255, 255, 255, 255))
+        self._white_texture: arcade.Texture = arcade.Texture(name="__white__", image=_white)
+
+        # Cache des sons (#12)
+        self._sound_cache: dict[str, Sound] = {}
+
         self.view: GameView = GameView(self)
-        self.frame_no: int = 0
     
     def _load_icon(self) -> None:
         """Load window icon from package assets directory."""
@@ -70,25 +102,20 @@ class ArcadeEngine(AbstractEngine):
     def exit(self) -> None:
         self.window.close()
 
+    def _check_bounds(self, i: int, j: int) -> None:
+        if not (0 <= i < self.nrows and 0 <= j < self.ncols):
+            raise IndexError(f"Cell ({i}, {j}) is out of bounds for grid {self.nrows}×{self.ncols}")
+
     @override
-    def set_cell_color(self, i: int, j: int, couleur: str) -> None:
-        """permet de colorier une case de la grille"""
-        if i >= self.nrows or j >= self.ncols:
-            raise IndexError("Index of of bound")
+    def set_cell_color(self, i: int, j: int, color: str) -> None:
+        self._check_bounds(i, j)
         i = self.nrows - 1 - i
-
-        # TODO improve by not recreating each time
-        empty_image = Image.new("RGBA", (self.cell_size, self.cell_size), (255, 255, 255, 255))
-        empty_texture = arcade.Texture(name="vide", image=empty_image)
-
-        self.view.grid_sprites[i][j].texture = empty_texture
-        self.view.grid_sprites[i][j].color = _hex_to_rgb(couleur)
+        self.view.grid_sprites[i][j].texture = self._white_texture
+        self.view.grid_sprites[i][j].color = _hex_to_rgb(color)
 
     @override
     def set_cell_image(self, i: int, j: int, image: str) -> None:
-        """Color cell i,j with image in cache"""
-        if i >= self.nrows or j >= self.ncols:
-            return
+        self._check_bounds(i, j)
         if image not in self.view.textures:
             raise KeyError(f"Image '{image}' not loaded. Call load_image('{image}', path) first.")
         i = self.nrows - 1 - i
@@ -103,8 +130,8 @@ class ArcadeEngine(AbstractEngine):
             sprite = self.view.grid_sprites[i_flipped][j]
 
             if char:
-                # Create or update the Text
-                if self.view.grid_chars[i][j] is None:
+                existing = self.view.grid_chars[i][j]
+                if existing is None:
                     self.view.grid_chars[i][j] = arcade.Text(
                         text=char,
                         x=sprite.center_x,
@@ -114,8 +141,9 @@ class ArcadeEngine(AbstractEngine):
                         anchor_x="center",
                         anchor_y="center"
                     )
-                elif self.view.grid_chars[i][j].text != char: #type: ignore  # pyright: ignore[reportOptionalMemberAccess]
-                    self.view.grid_chars[i][j].text = char #type: ignore  # pyright: ignore[reportOptionalMemberAccess]
+                else:
+                    existing.text = char
+                    existing.color = _hex_to_rgb(color)
             else:
                 # Clear the character
                 self.view.grid_chars[i][j] = None
@@ -131,8 +159,9 @@ class ArcadeEngine(AbstractEngine):
 
     @override
     def play_sound(self, path: str) -> None:
-        son: Sound = arcade.load_sound(path)
-        _ = son.play()
+        if path not in self._sound_cache:
+            self._sound_cache[path] = arcade.load_sound(path)
+        _ = self._sound_cache[path].play()
 
 
 
@@ -178,16 +207,17 @@ class GameView(arcade.View):
         self.crafter.frame_no += 1 #! Incrémentation du frame_no
         #print("test")
         _ = super().on_update(delta_time)
-        if self.crafter.fn_update:
-            self.crafter.fn_update()
+        if self.crafter.on_update_fn:
+            self.crafter.on_update_fn()
 
     @override
     def on_key_press(self, symbol: int, modifiers: int) -> bool | None:
         logger.debug(f"on_key_press({symbol}, {modifiers})")
         _ = super().on_key_press(symbol, modifiers)
         #print(symbol, chr(symbol), modifiers)
-        if self.crafter.fn_key:
-            self.crafter.fn_key(chr(symbol))
+        if self.crafter.on_key_fn:
+            key_name = _KEY_MAP.get(symbol, chr(symbol) if symbol < 128 else f"key_{symbol}")
+            self.crafter.on_key_fn(key_name)
 #            self.immediate_update()
 
     @override
@@ -195,8 +225,8 @@ class GameView(arcade.View):
         """
         Render the screen.
         """
-        if self.crafter.fn_draw:
-            self.crafter.fn_draw()
+        if self.crafter.on_draw_fn:
+            self.crafter.on_draw_fn()
         self.clear()
         self.grid_sprite_list.draw()
         #print(self.grid_chars)
@@ -215,15 +245,8 @@ class GameView(arcade.View):
         column = int(x // (self.crafter.cell_size + self.crafter.margin))
         row = self.crafter.nrows - 1 - int(y // (self.crafter.cell_size + self.crafter.margin))
         logger.debug(f"Grid coordinates: ({row}, {column})")
-        if self.crafter.fn_click:
-            self.crafter.fn_click(row, column)
+        if self.crafter.on_click_fn and 0 <= row < self.crafter.nrows and 0 <= column < self.crafter.ncols:
+            button_name = _BUTTON_MAP.get(button, "left")
+            self.crafter.on_click_fn(row, column, button_name)
             #self.immediate_update()
 
-"""
-    def immediate_update(self):
-        self.on_update(0)
-        self.window.set_update_rate(0)
-        self.on_draw()
-        self.window.flip()
-        self.window.set_update_rate(1/self.crafter.fps)
-"""

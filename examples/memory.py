@@ -48,7 +48,7 @@ def init():
     flag_game_over = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     """Retourne la carte cliquée et vérifie si une paire est formée."""
     global delai, flag_game_over
     # Ignorer le clic si le délai est actif, si la carte est déjà trouvée ou déjà retournée
@@ -105,9 +105,9 @@ def draw():
 
 if __name__ == "__main__":
     jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 6)
-    jeu.init(init)
-    jeu.callback_click(cliquer)
-    jeu.callback_key(touche)
-    jeu.update(update)
-    jeu.draw(draw)
+    jeu.on_init(init)
+    jeu.on_click(cliquer)
+    jeu.on_key(touche)
+    jeu.on_update(update)
+    jeu.on_draw(draw)
     jeu.start()

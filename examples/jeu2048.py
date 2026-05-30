@@ -142,7 +142,7 @@ if __name__ == "__main__":
     jeu = metagrid.create(TAILLE, TAILLE, TAILLE_CASE, 8)
     for v in VALEURS:
         jeu.load_image(f"tile_{v}", str(ASSETS / f"tile_{v}.png"))
-    jeu.init(init)
-    jeu.callback_key(touche)
-    jeu.draw(draw)
+    jeu.on_init(init)
+    jeu.on_key(touche)
+    jeu.on_draw(draw)
     jeu.start()

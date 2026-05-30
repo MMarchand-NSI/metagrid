@@ -90,7 +90,7 @@ def init():
     flag_game_over = False
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     # On ignore la ligne cliquée : seule la colonne compte (gravité)
     jouer_dans_colonne(j)
 
@@ -115,9 +115,9 @@ def draw():
 
 if __name__ == "__main__":
     jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 4)
-    jeu.init(init)
-    jeu.callback_click(cliquer)
-    jeu.callback_key(touche)
+    jeu.on_init(init)
+    jeu.on_click(cliquer)
+    jeu.on_key(touche)
 
-    jeu.draw(draw)
+    jeu.on_draw(draw)
     jeu.start()

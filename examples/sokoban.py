@@ -109,7 +109,7 @@ if __name__ == "__main__":
     for nom in tiles.values():
         jeu.load_image(nom, f"assets/sokoban/{nom}.png")
     jeu.play_sound(r"assets/sounds/sokoban_intro.mp3")
-    jeu.init(init)
-    jeu.callback_key(touche)
-    jeu.draw(dessiner)
+    jeu.on_init(init)
+    jeu.on_key(touche)
+    jeu.on_draw(dessiner)
     jeu.start()

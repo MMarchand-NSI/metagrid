@@ -11,7 +11,7 @@ Structure d'un programme metagrid
 Un programme metagrid suit toujours le même schéma en cinq étapes :
 
     1. Définir les variables d'état du jeu (globales).
-    2. Écrire les fonctions callbacks (init, update, draw, clique, touche).
+    2. Écrire les fonctions callbacks (on_init, on_update, on_draw, on_click, on_key).
     3. Dans le bloc if __name__ == "__main__" :
         a. Créer le moteur avec metagrid.create().
         b. Enregistrer chaque callback.
@@ -71,7 +71,7 @@ def init():
     print("Jeu initialisé")
 
 
-def clique(i: int, j: int):
+def clique(i: int, j: int, button: str):
     """
     Appelée chaque fois que l'utilisateur clique sur une cellule de la grille.
 
@@ -81,8 +81,10 @@ def clique(i: int, j: int):
         Indice de ligne de la cellule cliquée (0 = ligne du haut).
     j : int
         Indice de colonne de la cellule cliquée (0 = colonne de gauche).
+    button : str
+        Bouton utilisé : "left", "right" ou "middle".
     """
-    print(f"Case ({i}, {j}) cliquée")
+    print(f"Case ({i}, {j}) cliquée avec le bouton {button}")
 
 
 def touche(key: str):
@@ -157,11 +159,11 @@ if __name__ == "__main__":
 
     # Enregistrer les callbacks : on passe simplement la fonction (sans l'appeler).
     # metagrid se chargera de l'appeler au bon moment.
-    game.init(init)             # appelée une fois au démarrage
-    game.callback_click(clique) # appelée à chaque clic sur la grille
-    game.callback_key(touche)   # appelée à chaque touche du clavier
-    game.update(update)         # appelée à chaque frame, avant draw
-    game.draw(draw)             # appelée à chaque frame, après update
+    game.on_init(init)             # appelée une fois au démarrage
+    game.on_click(clique) # appelée à chaque clic sur la grille
+    game.on_key(touche)   # appelée à chaque touche du clavier
+    game.on_update(update)         # appelée à chaque frame, avant draw
+    game.on_draw(draw)             # appelée à chaque frame, après update
 
     # Lancer la boucle de jeu. Cette ligne est bloquante :
     # le programme reste ici jusqu'à ce que l'utilisateur ferme la fenêtre.

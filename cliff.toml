@@ -1,0 +1,30 @@
+[changelog]
+header = "# Changelog\n\n"
+body = """
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | upper_first }} \
+  ([`{{ commit.id | truncate(length=7, end="") }}`](https://github.com/MMarchand-NSI/metagrid/commit/{{ commit.id }}))
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+footer = ""
+
+[git]
+conventional_commits = false
+filter_unconventional = false
+commit_parsers = [
+  { message = "(?i)^(fix|corrige|répare|résout)", group = "🐛 Corrections" },
+  { message = "(?i)^(feat|ajoute|add|nouveau|nouvelle)", group = "✨ Nouveautés" },
+  { message = "(?i)^(refactor|refactorise|renomme)", group = "♻️ Refactoring" },
+  { message = "(?i)^(perf|optimise|améliore)", group = "⚡ Performances" },
+  { message = "(?i)^(doc|docs)", group = "📚 Documentation" },
+  { message = ".*", group = "🔧 Changements" },
+]
+filter_commits = false
+tag_pattern = "v[0-9].*"
+topo_order = false
+sort_commits = "oldest"

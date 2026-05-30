@@ -65,7 +65,7 @@ def init():
     melanger(100)
 
 
-def cliquer(i: int, j: int):
+def cliquer(i: int, j: int, _button: str):
     bouge(i, j)
 
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     jeu = metagrid.create(NB_LIGNES, NB_COLONNES, TAILLE_CASE, 0)
     for i in range(16):
         jeu.load_image(f"tile{i}", f"assets/taquin/tile_{i}.png")
-    jeu.init(init)
-    jeu.callback_click(cliquer)
-    jeu.draw(affiche_grille)
+    jeu.on_init(init)
+    jeu.on_click(cliquer)
+    jeu.on_draw(affiche_grille)
     jeu.start()

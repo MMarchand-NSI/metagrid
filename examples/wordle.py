@@ -116,7 +116,7 @@ if __name__ == "__main__":
     images = ["curseur", "faux", "malplace", "trouve", "vide"]
     for nom in images:
         jeu.load_image(nom, f"assets/wordle/{nom}.png")
-    jeu.init(init)
-    jeu.callback_key(touche)
-    jeu.draw(dessiner)
+    jeu.on_init(init)
+    jeu.on_key(touche)
+    jeu.on_draw(dessiner)
     jeu.start()
