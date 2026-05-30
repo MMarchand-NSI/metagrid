@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.5.0] - 2026-05-30
+
+### ✨ Nouveautés
+
+- Feat: add networked tic-tac-toe game with WebSocket support
+
+- Implemented morpion_reseau.py for a two-player tic-tac-toe game over WebSocket.
+- Created game_client.py to handle WebSocket connections and game state updates.
+- Added networked.py to wrap an AbstractEngine with network capabilities, enabling game creation, joining, and move sending.
+- Included necessary decorators for handling game events such as game start, opponent moves, and opponent disconnection. ([`436171c`](https://github.com/MMarchand-NSI/metagrid/commit/436171cea3e4f8e20a4df1d763a24a98ee60377f))
+
+- Feat: enhance game client and network engine with type hints and improved documentation ([`42a473d`](https://github.com/MMarchand-NSI/metagrid/commit/42a473d98f8b5e2474642a4a61d11380ec39a607))
+
+
+### 📚 Documentation
+
+- Docs: mise à jour du CHANGELOG pour v0.4.0 ([`ba461bd`](https://github.com/MMarchand-NSI/metagrid/commit/ba461bd9c0a542c66b603d5aeb35e5b731912c20))
+
+
+### 🔧 Changements
+
+- Merge branch 'main' of https://github.com/MMarchand-NSI/metagrid ([`16aafbc`](https://github.com/MMarchand-NSI/metagrid/commit/16aafbc11b04acb3a7e49168e05568f81a330afb))
+
 ## [0.4.0] - 2026-05-30
 
 ### ✨ Nouveautés
