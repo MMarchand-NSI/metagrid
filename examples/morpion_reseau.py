@@ -96,7 +96,7 @@ def debut(je_commence: bool):
     print("C'est ton tour." if mon_tour else "Attends le coup de l'adversaire.")
 
 
-def coup_adversaire(state):
+def coup_adversaire(state: list[list[int]]):
     global plateau, mon_tour, cellules_gagnantes, partie_terminee
     plateau = state
     cellules_gagnantes = trouver_alignement()
@@ -123,7 +123,7 @@ def adversaire_parti():
 
 def cliquer(i: int, j: int, _bouton: str):
     global mon_tour, cellules_gagnantes, partie_terminee
-    if partie_terminee or not mon_tour or plateau[i][j] != 0:
+    if partie_terminee or not mon_tour or mon_numero is None or plateau[i][j] != 0:
         return
     plateau[i][j] = mon_numero
     jeu.send_move(plateau)

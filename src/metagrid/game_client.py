@@ -1,77 +1,83 @@
 """
 game_client.py
 ==============
-Client WebSocket générique pour le serveur de jeu.
+Generic WebSocket client for the game server.
 
-Les élèves n'écrivent pas ce fichier : ils l'importent via metagrid.
-Dépendance : websockets  (pip install metagrid[network])
+Students do not write this file: they import it via metagrid.
+Dependency: websockets  (pip install metagrid[network])
 """
 
 import json
 import threading
 import asyncio
+from collections.abc import Callable
+from typing import Any
 import websockets
 from urllib.parse import urlencode
 
 
 class GameClient:
     """
-    Client synchrone pour le serveur de jeu WebSocket.
+    Synchronous client for the WebSocket game server.
 
-    Paramètres
+    Parameters
     ----------
     url : str
-        URL WebSocket de base du serveur (ex. "wss://game-server.fly.dev/ws").
-        Ne pas inclure le token ici.
+        Base WebSocket URL of the server (e.g. "wss://game-server.fly.dev/ws").
+        Do not include the token here.
     token : str
-        Token d'accès fourni par l'enseignant.
+        Access token provided by the teacher.
     on_start : callable(client)
-        Appelé quand la partie démarre (les deux joueurs sont connectés).
+        Called when the game starts (both players are connected).
     on_update : callable(client, state)
-        Appelé quand l'adversaire envoie un état de jeu.
-        `state` est la valeur JSON décodée (dict, list, int, etc.).
-    on_opponent_left : callable(client), optionnel
-    on_error : callable(client, reason), optionnel
+        Called when the opponent sends a game state.
+        `state` is the decoded JSON value (dict, list, int, etc.).
+    on_opponent_left : callable(client), optional
+    on_error : callable(client, reason), optional
     """
 
     def __init__(
         self,
         url: str,
         token: str,
-        on_start,
-        on_update,
-        on_opponent_left=None,
-        on_error=None,
-    ):
+        on_start: Callable[["GameClient"], None],
+        on_update: Callable[["GameClient", Any], None],
+        on_opponent_left: Callable[["GameClient"], None] | None = None,
+        on_error: Callable[["GameClient", str], None] | None = None,
+    ) -> None:
         separator = "&" if "?" in url else "?"
         self._url = url + separator + urlencode({"token": token})
 
         self._on_start = on_start
         self._on_update = on_update
-        self._on_opponent_left = on_opponent_left or (lambda c: None)
-        self._on_error = on_error or (lambda c, r: print(f"[Erreur serveur] {r}"))
+        self._on_opponent_left: Callable[["GameClient"], None] = (
+            on_opponent_left or (lambda c: None)
+        )
+        self._on_error: Callable[["GameClient", str], None] = (
+            on_error or (lambda c, r: print(f"[Server error] {r}"))
+        )
 
-        self._ws = None
-        self._loop = None
-        self._game_id = None
+        self._ws: Any = None
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._game_id: str | None = None
         self._ready = threading.Event()
-        self._thread = None
-        self._connect_error = None
+        self._thread: threading.Thread | None = None
+        self._connect_error: str | None = None
 
     # ------------------------------------------------------------------
-    # API publique
+    # Public API
     # ------------------------------------------------------------------
 
     def create(self) -> str:
         """
-        Crée une nouvelle partie.
-        Bloque jusqu'à réception de l'ID.
-        Lève une exception si le token est refusé.
+        Create a new game.
+        Blocks until the game ID is received.
+        Raises ConnectionError if the token is rejected.
         """
         id_event = threading.Event()
-        result = {}
+        result: dict[str, str] = {}
 
-        def on_created(game_id):
+        def on_created(game_id: str) -> None:
             result["game_id"] = game_id
             id_event.set()
 
@@ -83,31 +89,30 @@ class GameClient:
         return result.get("game_id", "")
 
     def join(self, game_id: str) -> None:
-        """Rejoint une partie existante via son ID."""
+        """Join an existing game by its ID."""
         self._start_loop()
         self._check_connect_error()
         self._send_sync({"type": "join", "game_id": game_id})
 
-    def move(self, state) -> None:
+    def move(self, state: Any) -> None:
         """
-        Envoie un état de jeu à l'adversaire.
-        `state` peut être n'importe quelle valeur sérialisable en JSON.
+        Send a game state to the opponent.
+        `state` can be any JSON-serialisable value.
         """
         self._send_sync({"type": "move", "state": state})
 
     def stop(self) -> None:
-        """Ferme la connexion WebSocket et arrête le client."""
-        if self._ws and self._loop and not self._loop.is_closed():
+        """Close the WebSocket connection and stop the client."""
+        ws, loop = self._ws, self._loop
+        if ws and loop and not loop.is_closed():
             try:
-                future = asyncio.run_coroutine_threadsafe(
-                    self._ws.close(), self._loop
-                )
-                future.result(timeout=3.0)  # attend que le close frame soit envoyé
+                future = asyncio.run_coroutine_threadsafe(ws.close(), loop)
+                future.result(timeout=3.0)  # wait for the close frame to be sent
             except Exception:
                 pass
 
     def run(self) -> None:
-        """Bloque jusqu'à la fin de la partie. Répond à Ctrl+C."""
+        """Block until the game ends. Responds to Ctrl+C."""
         if self._thread:
             try:
                 while self._thread.is_alive():
@@ -115,11 +120,20 @@ class GameClient:
             except KeyboardInterrupt:
                 self.stop()
 
+    def is_running(self) -> bool:
+        """Return True if the network thread is still active."""
+        return self._thread is not None and self._thread.is_alive()
+
+    def wait(self, timeout: float) -> None:
+        """Wait for the network thread to finish (at most `timeout` seconds)."""
+        if self._thread is not None:
+            self._thread.join(timeout=timeout)
+
     # ------------------------------------------------------------------
-    # Boucle asyncio interne
+    # Internal asyncio loop
     # ------------------------------------------------------------------
 
-    def _start_loop(self):
+    def _start_loop(self) -> None:
         if self._thread is not None:
             self._ready.wait(timeout=5)
             return
@@ -129,17 +143,18 @@ class GameClient:
         self._thread.start()
         self._ready.wait(timeout=5)
 
-    def _run_loop(self):
+    def _run_loop(self) -> None:
         asyncio.set_event_loop(self._loop)
+        assert self._loop is not None
         self._loop.run_until_complete(self._connect_and_listen())
 
-    async def _connect_and_listen(self):
+    async def _connect_and_listen(self) -> None:
         try:
             async with websockets.connect(
                 self._url,
-                ping_interval=5,   # détecte les connexions mortes en ~10 s
+                ping_interval=5,   # detect dead connections in ~10 s
                 ping_timeout=5,
-                close_timeout=2,   # fermeture propre en 2 s max
+                close_timeout=2,   # clean close within 2 s
             ) as ws:
                 self._ws = ws
                 self._ready.set()
@@ -147,25 +162,25 @@ class GameClient:
                     async for raw in ws:
                         await asyncio.to_thread(self._dispatch, raw)
                 except Exception:
-                    pass  # connexion perdue en cours de partie → le fallback gère
+                    pass  # connection lost mid-game → fallback handles it
         except websockets.exceptions.InvalidStatus as e:
             if e.response.status_code == 401:
                 self._connect_error = (
-                    "Token refusé (HTTP 401). "
-                    "Vérifiez que le token est correct."
+                    "Token rejected (HTTP 401). "
+                    "Check that the token is correct."
                 )
             else:
-                self._connect_error = f"Connexion refusée : HTTP {e.response.status_code}"
+                self._connect_error = f"Connection refused: HTTP {e.response.status_code}"
             self._ready.set()
         except Exception as e:
-            self._connect_error = f"Erreur de connexion : {e}"
+            self._connect_error = f"Connection error: {e}"
             self._ready.set()
 
-    def _check_connect_error(self):
+    def _check_connect_error(self) -> None:
         if self._connect_error:
             raise ConnectionError(self._connect_error)
 
-    def _dispatch(self, raw: str):
+    def _dispatch(self, raw: str | bytes) -> None:
         try:
             msg = json.loads(raw)
         except json.JSONDecodeError:
@@ -175,7 +190,7 @@ class GameClient:
 
         if msg_type == "created":
             self._game_id = msg.get("game_id")
-            if hasattr(self, "_pending_create"):
+            if hasattr(self, "_pending_create") and self._game_id is not None:
                 self._pending_create(self._game_id)
 
         elif msg_type == "start":
@@ -193,11 +208,11 @@ class GameClient:
         elif msg_type == "error":
             self._on_error(self, msg.get("reason", "unknown"))
 
-    def _send_sync(self, payload: dict):
+    def _send_sync(self, payload: dict[str, Any]) -> None:
         raw = json.dumps(payload)
-        future = asyncio.run_coroutine_threadsafe(
-            self._ws.send(raw), self._loop
-        )
+        ws, loop = self._ws, self._loop
+        assert ws is not None and loop is not None
+        future = asyncio.run_coroutine_threadsafe(ws.send(raw), loop)
         future.result(timeout=5)
 
     @property
