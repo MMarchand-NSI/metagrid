@@ -2,10 +2,8 @@
 2048
 ----
 Fusionne des tuiles pour atteindre 2048.
-Chaque valeur est représentée par une couleur distincte (palette classique du jeu).
+Chaque valeur est représentée par une image (palette classique du jeu).
 Les victoires et défaites sont annoncées dans la console.
-
-Refaire avec des images à la place des couleurs serait un bon exercice pour se familiariser avec les fonctions `set_cell_image` et `load_image`.
 
 z : haut   s : bas   q : gauche   d : droite
 r : recommencer
@@ -14,26 +12,14 @@ r : recommencer
 import metagrid
 from metagrid import AbstractEngine
 from random import choice, random
+from pathlib import Path
 
 
 TAILLE      = 4
 TAILLE_CASE = 120
 
-# Palette classique du jeu original
-COULEURS: dict[int, str] = {
-    0:    "#CDC1B4",
-    2:    "#EEE4DA",
-    4:    "#EDE0C8",
-    8:    "#F2B179",
-    16:   "#F59563",
-    32:   "#F67C5F",
-    64:   "#F65E3B",
-    128:  "#EDCF72",
-    256:  "#EDCC61",
-    512:  "#EDC850",
-    1024: "#EDC53F",
-    2048: "#EDC22E",
-}
+VALEURS = [0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+ASSETS  = Path(__file__).parent / "assets" / "2048"
 
 grille: list[list[int]]
 score: int
@@ -149,13 +135,14 @@ def draw():
     for i in range(TAILLE):
         for j in range(TAILLE):
             val = grille[i][j]
-            jeu.set_cell_color(i, j, COULEURS.get(val, "#3C3A32"))
+            jeu.set_cell_image(i, j, f"tile_{val}")
 
 
 if __name__ == "__main__":
     jeu = metagrid.create(TAILLE, TAILLE, TAILLE_CASE, 8)
+    for v in VALEURS:
+        jeu.load_image(f"tile_{v}", str(ASSETS / f"tile_{v}.png"))
     jeu.init(init)
     jeu.callback_key(touche)
-
     jeu.draw(draw)
     jeu.start()

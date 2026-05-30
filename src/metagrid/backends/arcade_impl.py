@@ -1,6 +1,5 @@
 from pathlib import Path
 from arcade.sound import Sound
-from arcade.application import View
 from arcade.application import Window
 from arcade.sprite.colored import SpriteSolidColor
 from arcade.texture.texture import Texture
@@ -10,7 +9,6 @@ import pyglet.image
 
 from arcade.types import Color, RGBOrA255
 from .abstract import AbstractEngine
-from typing import Callable
 from PIL import Image
 import arcade
 import logging
@@ -124,7 +122,10 @@ class ArcadeEngine(AbstractEngine):
 
     @override
     def load_image(self, name: str, path: str) -> None:
-        self.view.textures[name] = arcade.load_texture(path)
+        img = Image.open(path).convert("RGBA")
+        background = Image.new("RGBA", img.size, (255, 255, 255, 255))
+        background.paste(img, mask=img.split()[3])
+        self.view.textures[name] = arcade.Texture(name=name, image=background)
         self.view.textures[name].width = self.cell_size
         self.view.textures[name].height = self.cell_size
 
