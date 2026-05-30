@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.4.0] - 2026-05-30
+
+### ✨ Nouveautés
+
+- Feat: add GitHub Actions for automated release and changelog generation
+chore: update Python interpreter path in VSCode settings
+docs: create CHANGELOG.md and cliff.toml for automated changelog generation
+refactor: rename callback functions to on_* in examples for consistency
+feat: implement Minesweeper example with game logic and UI ([`a62f836`](https://github.com/MMarchand-NSI/metagrid/commit/a62f836bdfb1a82263ffd8122dd59af840d19434))
+
+
+### 📚 Documentation
+
+- Docs: mise à jour du CHANGELOG pour v0.3.0 ([`bb0c62d`](https://github.com/MMarchand-NSI/metagrid/commit/bb0c62d2f3bdf0f37d39143543008766f85e703f))
+
+- Docs: add bilingual README with full tutorial (EN/FR) ([`246d727`](https://github.com/MMarchand-NSI/metagrid/commit/246d72723afd25f8425748a0222dcbc9c8bfc7c0))
+
+
+### 🔧 Changements
+
+- Affiche les chiffres dans le 2048, lève la restriction single-char de set_cell_char ([`68e0ed7`](https://github.com/MMarchand-NSI/metagrid/commit/68e0ed7f1fccd7c9fcd208cf1901341e213842a4))
+
+- Revert "Affiche les chiffres dans le 2048, lève la restriction single-char de set_cell_char"
+
+This reverts commit 68e0ed7f1fccd7c9fcd208cf1901341e213842a4. ([`b4c3829`](https://github.com/MMarchand-NSI/metagrid/commit/b4c38299abf4c86a5ae5d8ecd6010fa8cd82e557))
+
 ## [0.3.0] - 2026-05-14
 
 ### ♻️ Refactoring
@@ -55,6 +81,8 @@
 
 
 ### 🔧 Changements
+
+- Jeu memory+gestion transparence ([`ccad5b3`](https://github.com/MMarchand-NSI/metagrid/commit/ccad5b33232fdb28405c7990b7e11ba6c926f2b6))
 
 - Expose mouse button in callback_click (closes #5)
 
