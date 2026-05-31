@@ -144,7 +144,17 @@ class NetworkedEngine:
             print(f"\nPartie créée. Transmets cet ID à ton adversaire : {game_id}")
             print("En attente du second joueur...\n")
         else:
-            game_id = input("Entre l'identifiant de la partie : ").strip().upper()
+            game_id = ""
+            while not game_id:
+                try:
+                    game_id = input("Entre l'identifiant de la partie : ").strip().upper()
+                except EOFError:
+                    raise RuntimeError(
+                        "Impossible de lire la saisie (stdin fermé). "
+                        "Lance le script dans un terminal interactif."
+                    )
+                if not game_id:
+                    print("L'identifiant ne peut pas être vide.")
             print(f"\nRejoindre la partie {game_id}...")
             self._join(game_id)
 
