@@ -37,10 +37,10 @@ def create_networked(nrows: int, ncols: int, cell_size: int, margin: int, url: s
         @game.on_opponent_move → fn(state)
         @game.on_opponent_left → fn()
 
-    Extra methods:
-        game_id = game.create()   # create a game and get the ID to share
-        game.join(game_id)        # join an existing game
-        game.send_move(state)     # send your game state to the opponent
+    Extra method:
+        game.send_move(state)  # send your game state to the opponent
+
+    The create-or-join prompt is handled automatically by game.start().
     """
     try:
         from .networked import NetworkedEngine
