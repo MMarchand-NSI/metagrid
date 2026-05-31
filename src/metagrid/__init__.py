@@ -6,7 +6,7 @@ except Exception:
 
 
 from .backends import AbstractEngine
-from .CrafterFactory import CrafterFactory
+from .crafter_factory import CrafterFactory
 
 def create(nrows: int, ncols: int, cell_size: int, margin: int) -> AbstractEngine:
     """
@@ -21,7 +21,7 @@ def create(nrows: int, ncols: int, cell_size: int, margin: int) -> AbstractEngin
     return CrafterFactory.create("arcade", nrows, ncols, cell_size, margin)
 
 
-def create_networked(nrows: int, ncols: int, cell_size: int, margin: int, url: str, token: str):
+def create_networked(nrows: int, ncols: int, cell_size: int, margin: int, url: str | None = None, token: str | None = None):
     """
     Returns a networked metagrid engine for 2-player remote games.
 
