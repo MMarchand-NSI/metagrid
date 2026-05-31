@@ -40,6 +40,7 @@ class NetworkedEngine:
             on_start=lambda c: self._queue.put(("start", self._i_created)),
             on_update=lambda c, state: self._queue.put(("update", state)),
             on_opponent_left=lambda c: self._queue.put(("left",)),
+            on_error=lambda c, reason: self._queue.put(("error", reason)),
         )
 
     # ------------------------------------------------------------------
@@ -174,6 +175,9 @@ class NetworkedEngine:
             elif kind == "update" and self._on_opponent_move_fn:
                 self._on_opponent_move_fn(event[1])
             elif kind == "left":
+                self._fire_opponent_left()
+            elif kind == "error":
+                print(f"[metagrid] Erreur serveur : {event[1]}")
                 self._fire_opponent_left()
 
         # Fallback: if the network thread died without sending "left"
