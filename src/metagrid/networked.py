@@ -147,7 +147,7 @@ class NetworkedEngine:
             game_id = ""
             while not game_id:
                 try:
-                    game_id = input("Entre l'identifiant de la partie : ").strip().upper()
+                    game_id = "".join(input("Entre l'identifiant de la partie : ").split()).upper()
                 except EOFError:
                     raise RuntimeError(
                         "Impossible de lire la saisie (stdin fermé). "
