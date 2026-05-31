@@ -219,6 +219,95 @@ Ce code est disponible en intégralité dans [`examples/full_example.py`](exampl
 
 ---
 
+---
+
+## Jeux réseau tour par tour
+
+Metagrid permet de créer des jeux à 2 joueurs en réseau via WebSocket. Chaque joueur lance le même script ; le serveur les met en relation et relaie les coups.
+
+### Pour les enseignants — héberger le serveur
+
+Les enseignants peuvent héberger leur propre instance du serveur de jeu grâce au dépôt open-source [MMarchand-NSI/game-server](https://github.com/MMarchand-NSI/game-server). Une fois déployé, transmettez l'URL du serveur et le token d'accès à vos élèves pour qu'ils renseignent leur fichier `.env`.
+
+### Configuration
+
+Crée un fichier `.env` à la racine de ton projet (copie `.env.example` et remplis les valeurs fournies par ton enseignant) :
+
+```
+METAGRID_URL=wss://...
+METAGRID_TOKEN=ton_token
+```
+
+Les identifiants sont chargés automatiquement — tu ne les écris jamais dans le fichier Python.
+
+### Créer le moteur
+
+```python
+import metagrid
+
+game = metagrid.create_networked(nb_lignes, nb_colonnes, taille_case, marge)
+```
+
+### Callbacks supplémentaires
+
+#### `on_game_start` — les deux joueurs sont connectés
+
+```python
+def debut(je_commence: bool):
+    # je_commence vaut True pour le joueur qui a créé la partie
+    pass
+
+game.on_game_start(debut)
+```
+
+#### `on_opponent_move` — l'adversaire a envoyé un coup
+
+```python
+def coup_adversaire(state):
+    # state est ce qui a été passé à game.send_move() par l'adversaire
+    pass
+
+game.on_opponent_move(coup_adversaire)
+```
+
+#### `on_opponent_left` — l'adversaire s'est déconnecté
+
+```python
+def adversaire_parti():
+    pass
+
+game.on_opponent_left(adversaire_parti)
+```
+
+### Méthodes supplémentaires
+
+| Méthode | Description |
+|---|---|
+| `game.send_move(state)` | Envoie l'état courant du jeu à l'adversaire (toute valeur sérialisable en JSON) |
+| `game.disconnect()` | Ferme la connexion (à appeler en fin de partie) |
+
+### Structure d'un programme réseau
+
+`game.start()` demande automatiquement si on crée ou rejoint une partie avant de lancer la boucle.
+
+```python
+if __name__ == "__main__":
+    game = metagrid.create_networked(nb_lignes, nb_colonnes, taille_case, marge)
+
+    game.on_init(init)
+    game.on_draw(draw)
+    game.on_game_start(debut)
+    game.on_opponent_move(coup_adversaire)
+    game.on_opponent_left(adversaire_parti)
+    game.on_click(cliquer)
+
+    game.start()
+```
+
+Voir l'exemple complet dans [`examples/morpion_reseau.py`](examples/morpion_reseau.py).
+
+---
+
 ## Exemples inclus
 
 | Fichier                              | Jeu          |
@@ -232,3 +321,4 @@ Ce code est disponible en intégralité dans [`examples/full_example.py`](exampl
 | [`examples/sokoban.py`](examples/sokoban.py) | Sokoban |
 | [`examples/taquin.py`](examples/taquin.py) | Taquin |
 | [`examples/wordle.py`](examples/wordle.py) | Wordle |
+| [`examples/morpion_reseau.py`](examples/morpion_reseau.py) | Morpion en réseau |

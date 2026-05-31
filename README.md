@@ -219,16 +219,87 @@ The full source is available in [`examples/full_example.py`](examples/full_examp
 
 ---
 
-## Included examples
+---
 
-| File                                 | Game         |
-|--------------------------------------|--------------|
-| [`examples/snake.py`](examples/snake.py) | Snake |
-| [`examples/jeudelavie.py`](examples/jeudelavie.py) | Game of Life |
-| [`examples/jeu2048.py`](examples/jeu2048.py) | 2048 |
-| [`examples/puissance4.py`](examples/puissance4.py) | Connect Four |
-| [`examples/memory.py`](examples/memory.py) | Memory |
-| [`examples/lights_out.py`](examples/lights_out.py) | Lights Out |
-| [`examples/sokoban.py`](examples/sokoban.py) | Sokoban |
-| [`examples/taquin.py`](examples/taquin.py) | Sliding Puzzle |
-| [`examples/wordle.py`](examples/wordle.py) | Wordle |
+## Networked turn-based games
+
+Metagrid supports 2-player networked games over WebSocket. Each player runs the same script; the server matches them and relays moves.
+
+### For teachers — hosting the server
+
+Teachers can self-host the game server using the open-source repository [MMarchand-NSI/game-server](https://github.com/MMarchand-NSI/game-server). Once deployed, share the server URL and access token with your students so they can fill in their `.env` file.
+
+### Configuration
+
+Create a `.env` file at the root of your project (fill in the values provided by your teacher):
+
+```
+METAGRID_URL=wss://...
+METAGRID_TOKEN=your_token
+```
+
+The credentials are loaded automatically — you never write them in the Python file.
+
+### Create the engine
+
+```python
+import metagrid
+
+game = metagrid.create_networked(rows, cols, cell_size, margin)
+```
+
+### Extra callbacks
+
+#### `on_game_start` — both players connected
+
+```python
+def start(i_go_first: bool):
+    # i_go_first is True for the player who created the game
+    pass
+
+game.on_game_start(start)
+```
+
+#### `on_opponent_move` — opponent sent a move
+
+```python
+def opponent_move(state):
+    # state is whatever was passed to game.send_move() by the opponent
+    pass
+
+game.on_opponent_move(opponent_move)
+```
+
+#### `on_opponent_left` — opponent disconnected
+
+```python
+def opponent_left():
+    pass
+
+game.on_opponent_left(opponent_left)
+```
+
+### Extra methods
+
+| Method | Description |
+|---|---|
+| `game.send_move(state)` | Send the current game state to the opponent (any JSON-serialisable value) |
+| `game.disconnect()` | Close the connection (call when the game is over) |
+
+### Program structure
+
+`game.start()` automatically asks whether to create or join a game before launching the loop.
+
+```python
+if __name__ == "__main__":
+    game = metagrid.create_networked(rows, cols, cell_size, margin)
+
+    game.on_init(init)
+    game.on_draw(draw)
+    game.on_game_start(start)
+    game.on_opponent_move(opponent_move)
+    game.on_opponent_left(opponent_left)
+    game.on_click(click)
+
+    game.start()
+```
