@@ -17,6 +17,8 @@ import websockets
 from urllib.parse import urlencode
 from dotenv import load_dotenv
 
+load_dotenv()  # called once when this module is first imported
+
 
 class GameClient:
     """
@@ -46,7 +48,6 @@ class GameClient:
         url: str | None = None,
         token: str | None = None,
     ) -> None:
-        load_dotenv()  # searches CWD upward; no-op if already loaded
         url = url or os.environ.get("METAGRID_URL")
         token = token or os.environ.get("METAGRID_TOKEN")
         if not url:
@@ -153,10 +154,12 @@ class GameClient:
     # ------------------------------------------------------------------
 
     def _start_loop(self) -> None:
-        if self._thread is not None:
+        if self._thread is not None and self._thread.is_alive():
             self._ready.wait(timeout=5)
             return
-
+        # First start, or thread died after stop() — reset state fully
+        self._connect_error = None
+        self._ready = threading.Event()
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
@@ -179,8 +182,11 @@ class GameClient:
                 self._ready.set()
                 try:
                     async for raw in ws:
-                        await asyncio.to_thread(self._dispatch, raw)
-                except Exception:
+                        try:
+                            await asyncio.to_thread(self._dispatch, raw)
+                        except Exception as e:
+                            print(f"[metagrid] erreur dans le traitement d'un message : {e}")
+                except websockets.exceptions.ConnectionClosed:
                     pass  # connection lost mid-game → fallback handles it
         except websockets.exceptions.InvalidStatus as e:
             if e.response.status_code == 401:
@@ -211,6 +217,7 @@ class GameClient:
             self._game_id = msg.get("game_id")
             if self._pending_create is not None and self._game_id is not None:
                 self._pending_create(self._game_id)
+                self._pending_create = None  # consumed; prevent double-fire
 
         elif msg_type == "start":
             self._on_start(self)
