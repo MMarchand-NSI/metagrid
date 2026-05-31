@@ -161,6 +161,9 @@ class GameClient:
         self._ws = None
         self._connect_error = None
         self._ready = threading.Event()
+        old_loop = self._loop
+        if old_loop is not None:
+            old_loop.close()
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
@@ -184,7 +187,7 @@ class GameClient:
                 try:
                     async for raw in ws:
                         try:
-                            await asyncio.to_thread(self._dispatch, raw)
+                            self._dispatch(raw)
                         except Exception as e:
                             print(f"[metagrid] erreur dans le traitement d'un message : {e}")
                 except websockets.exceptions.ConnectionClosed:
@@ -199,6 +202,7 @@ class GameClient:
                 self._connect_error = f"Connection refused: HTTP {e.response.status_code}"
             self._ready.set()
         except asyncio.CancelledError:
+            self._ready.set()
             raise  # normal task cancellation — do not set _connect_error
         except Exception as e:
             self._connect_error = f"Connection error: {e}"
