@@ -3,25 +3,13 @@ Morpion réseau
 --------------
 Jeu de morpion (tic-tac-toe) à 2 joueurs via le serveur de jeu.
 
-Joueur 1 (crée la partie) :
     python morpion_reseau.py
-    → note l'identifiant affiché dans la console, transmets-le au joueur 2
 
-Joueur 2 (rejoint la partie) :
-    python morpion_reseau.py XXXX12
-
-Prérequis : pip install metagrid[network]
+Prérequis : pip install metagrid[network] python-dotenv
+Configure .env avec METAGRID_URL et METAGRID_TOKEN.
 """
 
-import sys
 import metagrid
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Remplis ces deux valeurs avec celles fournies par ton enseignant
-# ──────────────────────────────────────────────────────────────────────────────
-URL   = "wss://game-server-brisk-skylark-1315.fly.dev/ws"     # adresse du serveur
-TOKEN = "secret"           # mot de passe d'accès
-# ──────────────────────────────────────────────────────────────────────────────
 
 TAILLE      = 3
 TAILLE_CASE = 200
@@ -142,7 +130,7 @@ def cliquer(i: int, j: int, _bouton: str):
 
 
 if __name__ == "__main__":
-    jeu = metagrid.create_networked(TAILLE, TAILLE, TAILLE_CASE, 10, url=URL, token=TOKEN)
+    jeu = metagrid.create_networked(TAILLE, TAILLE, TAILLE_CASE, 10)
 
     jeu.on_init(init)
     jeu.on_draw(draw)
@@ -150,14 +138,5 @@ if __name__ == "__main__":
     jeu.on_opponent_move(coup_adversaire)
     jeu.on_opponent_left(adversaire_parti)
     jeu.on_click(cliquer)
-
-    if len(sys.argv) == 1:
-        game_id = jeu.create()
-        print(f"\nPartie créée. Transmets cet ID à ton adversaire : {game_id}")
-        print("En attente du second joueur...\n")
-    else:
-        game_id = sys.argv[1].upper()
-        print(f"\nRejoindre la partie {game_id}...")
-        jeu.join(game_id)
 
     jeu.start()

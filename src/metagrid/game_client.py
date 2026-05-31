@@ -8,12 +8,16 @@ Dependency: websockets  (pip install metagrid[network])
 """
 
 import json
+import os
 import threading
 import asyncio
 from collections.abc import Callable
 from typing import Any
 import websockets
 from urllib.parse import urlencode
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class GameClient:
@@ -22,11 +26,10 @@ class GameClient:
 
     Parameters
     ----------
-    url : str
-        Base WebSocket URL of the server (e.g. "wss://game-server.fly.dev/ws").
-        Do not include the token here.
-    token : str
-        Access token provided by the teacher.
+    url : str | None
+        Base WebSocket URL of the server. Falls back to METAGRID_URL env var.
+    token : str | None
+        Access token provided by the teacher. Falls back to METAGRID_TOKEN env var.
     on_start : callable(client)
         Called when the game starts (both players are connected).
     on_update : callable(client, state)
@@ -38,13 +41,19 @@ class GameClient:
 
     def __init__(
         self,
-        url: str,
-        token: str,
         on_start: Callable[["GameClient"], None],
         on_update: Callable[["GameClient", Any], None],
         on_opponent_left: Callable[["GameClient"], None] | None = None,
         on_error: Callable[["GameClient", str], None] | None = None,
+        url: str | None = None,
+        token: str | None = None,
     ) -> None:
+        url = url or os.environ.get("METAGRID_URL")
+        token = token or os.environ.get("METAGRID_TOKEN")
+        if not url:
+            raise ValueError("METAGRID_URL manquant : définis-le dans ton fichier .env")
+        if not token:
+            raise ValueError("METAGRID_TOKEN manquant : définis-le dans ton fichier .env")
         separator = "&" if "?" in url else "?"
         self._url = url + separator + urlencode({"token": token})
 

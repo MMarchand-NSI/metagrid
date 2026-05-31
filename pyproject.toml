@@ -25,6 +25,7 @@ dependencies = [
     "arcade>=3.3.0",
     "pillow>=11",
     "websockets>=16.0",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -39,9 +40,9 @@ Issues = "https://github.com/MMarchand-NSI/metagrid/issues"
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3",
-    "ruff>=0.6",
-    "mypy>=1.11",
+    "pytest>=9.0.3",
+    "ruff>=0.15.15",
+    "mypy>=2.1.0",
     "twine>=6.2.0",
 ]
 

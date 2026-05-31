@@ -23,7 +23,7 @@ class NetworkedEngine:
         game.send_move(state)  # send the game state to the server
     """
 
-    def __init__(self, engine: AbstractEngine, url: str, token: str) -> None:
+    def __init__(self, engine: AbstractEngine, url: str | None = None, token: str | None = None) -> None:
         from .game_client import GameClient
 
         self._engine = engine
@@ -78,6 +78,23 @@ class NetworkedEngine:
         """Join an existing game."""
         self._client.join(game_id)
 
+    def create_or_join(self) -> None:
+        """Ask the user interactively whether to create or join a game."""
+        while True:
+            choice = input("Créer une partie (c) ou rejoindre une partie (j) ? ").strip().lower()
+            if choice in ("c", "j"):
+                break
+            print("Réponds par 'c' ou 'j'.")
+
+        if choice == "c":
+            game_id = self.create()
+            print(f"\nPartie créée. Transmets cet ID à ton adversaire : {game_id}")
+            print("En attente du second joueur...\n")
+        else:
+            game_id = input("Entre l'identifiant de la partie : ").strip().upper()
+            print(f"\nRejoindre la partie {game_id}...")
+            self.join(game_id)
+
     def send_move(self, state: Any) -> None:
         """Send the current game state to the opponent."""
         self._client.move(state)
@@ -96,6 +113,7 @@ class NetworkedEngine:
         return fn
 
     def start(self) -> None:
+        self.create_or_join()
         user_update = self._user_update_fn
 
         def combined_update() -> None:
