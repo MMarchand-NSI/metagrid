@@ -17,10 +17,8 @@ class NetworkedEngine:
         @game.on_opponent_move -> fn(state)
         @game.on_opponent_left -> fn()   (optional)
 
-    Extra methods:
-        game.create() -> str   # create a game, returns the ID to share
-        game.join(game_id)     # join an existing game
-        game.send_move(state)  # send the game state to the server
+    Extra method:
+        game.send_move(state)  # send the game state to the opponent
     """
 
     def __init__(self, engine: AbstractEngine, url: str | None = None, token: str | None = None) -> None:
@@ -34,11 +32,12 @@ class NetworkedEngine:
         self._on_opponent_left_fn: Callable[[], None] | None = None
         self._game_started = False
         self._network_ended = False
+        self._i_created: bool = False
 
         self._client = GameClient(
             url=url,
             token=token,
-            on_start=lambda c: self._queue.put(("start", c.game_id is not None)),
+            on_start=lambda c: self._queue.put(("start", self._i_created)),
             on_update=lambda c, state: self._queue.put(("update", state)),
             on_opponent_left=lambda c: self._queue.put(("left",)),
         )
@@ -70,31 +69,6 @@ class NetworkedEngine:
     # Network actions
     # ------------------------------------------------------------------
 
-    def create(self) -> str:
-        """Create a new game. Blocks until the game ID is received."""
-        return self._client.create()
-
-    def join(self, game_id: str) -> None:
-        """Join an existing game."""
-        self._client.join(game_id)
-
-    def create_or_join(self) -> None:
-        """Ask the user interactively whether to create or join a game."""
-        while True:
-            choice = input("Créer une partie (c) ou rejoindre une partie (j) ? ").strip().lower()
-            if choice in ("c", "j"):
-                break
-            print("Réponds par 'c' ou 'j'.")
-
-        if choice == "c":
-            game_id = self.create()
-            print(f"\nPartie créée. Transmets cet ID à ton adversaire : {game_id}")
-            print("En attente du second joueur...\n")
-        else:
-            game_id = input("Entre l'identifiant de la partie : ").strip().upper()
-            print(f"\nRejoindre la partie {game_id}...")
-            self.join(game_id)
-
     def send_move(self, state: Any) -> None:
         """Send the current game state to the opponent."""
         self._client.move(state)
@@ -113,7 +87,7 @@ class NetworkedEngine:
         return fn
 
     def start(self) -> None:
-        self.create_or_join()
+        self._create_or_join()
         user_update = self._user_update_fn
 
         def combined_update() -> None:
@@ -145,6 +119,29 @@ class NetworkedEngine:
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
+
+    def _create(self) -> str:
+        self._i_created = True
+        return self._client.create()
+
+    def _join(self, game_id: str) -> None:
+        self._client.join(game_id)
+
+    def _create_or_join(self) -> None:
+        while True:
+            choice = input("Créer une partie (c) ou rejoindre une partie (j) ? ").strip().lower()
+            if choice in ("c", "j"):
+                break
+            print("Réponds par 'c' ou 'j'.")
+
+        if choice == "c":
+            game_id = self._create()
+            print(f"\nPartie créée. Transmets cet ID à ton adversaire : {game_id}")
+            print("En attente du second joueur...\n")
+        else:
+            game_id = input("Entre l'identifiant de la partie : ").strip().upper()
+            print(f"\nRejoindre la partie {game_id}...")
+            self._join(game_id)
 
     def _drain_queue(self) -> None:
         while True:
