@@ -17,8 +17,6 @@ import websockets
 from urllib.parse import urlencode
 from dotenv import load_dotenv
 
-load_dotenv()
-
 
 class GameClient:
     """
@@ -48,12 +46,19 @@ class GameClient:
         url: str | None = None,
         token: str | None = None,
     ) -> None:
+        load_dotenv()  # searches CWD upward; no-op if already loaded
         url = url or os.environ.get("METAGRID_URL")
         token = token or os.environ.get("METAGRID_TOKEN")
         if not url:
-            raise ValueError("METAGRID_URL manquant : définis-le dans ton fichier .env")
+            raise ValueError(
+                "METAGRID_URL manquant : définis-le dans ton fichier .env "
+                "ou via la variable d'environnement METAGRID_URL"
+            )
         if not token:
-            raise ValueError("METAGRID_TOKEN manquant : définis-le dans ton fichier .env")
+            raise ValueError(
+                "METAGRID_TOKEN manquant : définis-le dans ton fichier .env "
+                "ou via la variable d'environnement METAGRID_TOKEN"
+            )
         separator = "&" if "?" in url else "?"
         self._url = url + separator + urlencode({"token": token})
 
@@ -69,6 +74,7 @@ class GameClient:
         self._ws: Any = None
         self._loop: asyncio.AbstractEventLoop | None = None
         self._game_id: str | None = None
+        self._pending_create: Callable[[str], None] | None = None
         self._ready = threading.Event()
         self._thread: threading.Thread | None = None
         self._connect_error: str | None = None
@@ -82,6 +88,7 @@ class GameClient:
         Create a new game.
         Blocks until the game ID is received.
         Raises ConnectionError if the token is rejected.
+        Raises TimeoutError if the server does not respond within 10 s.
         """
         id_event = threading.Event()
         result: dict[str, str] = {}
@@ -94,8 +101,11 @@ class GameClient:
         self._start_loop()
         self._check_connect_error()
         self._send_sync({"type": "create"})
-        id_event.wait(timeout=10)
-        return result.get("game_id", "")
+        if not id_event.wait(timeout=10):
+            raise TimeoutError(
+                "Le serveur n'a pas répondu à la création de la partie (timeout 10 s)"
+            )
+        return result["game_id"]
 
     def join(self, game_id: str) -> None:
         """Join an existing game by its ID."""
@@ -199,7 +209,7 @@ class GameClient:
 
         if msg_type == "created":
             self._game_id = msg.get("game_id")
-            if hasattr(self, "_pending_create") and self._game_id is not None:
+            if self._pending_create is not None and self._game_id is not None:
                 self._pending_create(self._game_id)
 
         elif msg_type == "start":
