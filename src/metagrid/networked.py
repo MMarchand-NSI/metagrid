@@ -87,18 +87,17 @@ class NetworkedEngine:
         return fn
 
     def start(self) -> None:
-        self._create_or_join()
-        user_update = self._user_update_fn
-
-        def combined_update() -> None:
-            if user_update:
-                user_update()
-            self._drain_queue()
-
         atexit.register(self._shutdown)
-
-        self._engine.on_update_fn = combined_update
         try:
+            self._create_or_join()
+            user_update = self._user_update_fn
+
+            def combined_update() -> None:
+                if user_update:
+                    user_update()
+                self._drain_queue()
+
+            self._engine.on_update_fn = combined_update
             self._engine.start()
         finally:
             self._shutdown()
@@ -150,6 +149,8 @@ class NetworkedEngine:
             self._join(game_id)
 
     def _drain_queue(self) -> None:
+        if self._network_ended:
+            return
         while True:
             try:
                 event = self._queue.get_nowait()
