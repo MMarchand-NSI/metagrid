@@ -15,9 +15,9 @@ from collections.abc import Callable
 from typing import Any
 import websockets
 from urllib.parse import urlencode
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv()  # called once when this module is first imported
+load_dotenv(find_dotenv(usecwd=True))  # search upward from CWD, once at import
 
 
 class GameClient:
@@ -158,6 +158,7 @@ class GameClient:
             self._ready.wait(timeout=5)
             return
         # First start, or thread died after stop() — reset state fully
+        self._ws = None
         self._connect_error = None
         self._ready = threading.Event()
         self._loop = asyncio.new_event_loop()
@@ -197,6 +198,8 @@ class GameClient:
             else:
                 self._connect_error = f"Connection refused: HTTP {e.response.status_code}"
             self._ready.set()
+        except asyncio.CancelledError:
+            raise  # normal task cancellation — do not set _connect_error
         except Exception as e:
             self._connect_error = f"Connection error: {e}"
             self._ready.set()
@@ -237,7 +240,8 @@ class GameClient:
     def _send_sync(self, payload: dict[str, Any]) -> None:
         raw = json.dumps(payload)
         ws, loop = self._ws, self._loop
-        assert ws is not None and loop is not None
+        if ws is None or loop is None:
+            raise RuntimeError("_send_sync appelé avant l'établissement de la connexion WebSocket")
         future = asyncio.run_coroutine_threadsafe(ws.send(raw), loop)
         future.result(timeout=5)
 
