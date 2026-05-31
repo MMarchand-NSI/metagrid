@@ -187,7 +187,17 @@ class GameClient:
                 try:
                     async for raw in ws:
                         try:
-                            self._dispatch(raw)
+                            # ping handled here with await to avoid deadlock:
+                            # _send_sync blocks the asyncio thread, which
+                            # would prevent the loop from executing ws.send().
+                            try:
+                                msg_type = json.loads(raw).get("type")
+                            except (json.JSONDecodeError, AttributeError):
+                                msg_type = None
+                            if msg_type == "ping":
+                                await ws.send(json.dumps({"type": "pong"}))
+                            else:
+                                self._dispatch(raw)
                         except Exception as e:
                             print(f"[metagrid] erreur dans le traitement d'un message : {e}")
                 except websockets.exceptions.ConnectionClosed:
@@ -234,9 +244,6 @@ class GameClient:
 
         elif msg_type == "opponent_left":
             self._on_opponent_left(self)
-
-        elif msg_type == "ping":
-            self._send_sync({"type": "pong"})
 
         elif msg_type == "error":
             self._on_error(self, msg.get("reason", "unknown"))
