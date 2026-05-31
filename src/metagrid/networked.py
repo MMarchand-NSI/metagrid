@@ -128,11 +128,17 @@ class NetworkedEngine:
         self._client.join(game_id)
 
     def _create_or_join(self) -> None:
-        while True:
-            choice = input("Créer une partie (c) ou rejoindre une partie (j) ? ").strip().lower()
-            if choice in ("c", "j"):
-                break
-            print("Réponds par 'c' ou 'j'.")
+        choice = ""
+        while choice not in ("c", "j"):
+            try:
+                choice = input("Créer une partie (c) ou rejoindre une partie (j) ? ").strip().lower()
+            except EOFError:
+                raise RuntimeError(
+                    "Impossible de lire la saisie (stdin fermé). "
+                    "Lance le script dans un terminal interactif."
+                )
+            if choice not in ("c", "j"):
+                print("Réponds par 'c' ou 'j'.")
 
         if choice == "c":
             game_id = self._create()
