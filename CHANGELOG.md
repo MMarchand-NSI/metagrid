@@ -1,5 +1,113 @@
 # Changelog
 
+## [0.6.0] - 2026-06-01
+
+### ♻️ Refactoring
+
+- Renomme CrafterFactory.py en crafter_factory.py (snake_case) ([`1669c81`](https://github.com/MMarchand-NSI/metagrid/commit/1669c817fdaa55dffa3278a80eaeeb851b2ba92f))
+
+- Refactorise NetworkedEngine : i_go_first explicite, méthodes réseau privées
+
+- _i_created remplace c.game_id is not None pour le flag i_go_first (plus fiable)
+- create(), join(), create_or_join() deviennent _create(), _join(), _create_or_join()
+- l'API publique n'expose plus que send_move() et disconnect()
+- docstring mise à jour ([`fceaa91`](https://github.com/MMarchand-NSI/metagrid/commit/fceaa91d14104ab1518c1c577a6e9079b921bcd4))
+
+
+### ✨ Nouveautés
+
+- Ajoute le chargement automatique du .env et simplifie l'API réseau
+
+- python-dotenv ajouté en dépendance principale
+- GameClient charge le .env automatiquement via load_dotenv()
+- url et token deviennent optionnels, lus depuis METAGRID_URL / METAGRID_TOKEN
+- create_or_join() absorbé dans NetworkedEngine.start()
+- morpion_reseau.py ne contient plus aucune credential ([`50935ed`](https://github.com/MMarchand-NSI/metagrid/commit/50935ed47e26b247ba57770226fd632a4c921411))
+
+- Ajoute .env.example avec des valeurs placeholder
+
+Remplace les valeurs réelles du serveur par des placeholders pour éviter
+toute fuite de credentials lors d'un partage du projet. ([`0d4cc7e`](https://github.com/MMarchand-NSI/metagrid/commit/0d4cc7ecc2185e42cbadcdd226fe355e27f43928))
+
+
+### 🐛 Corrections
+
+- Corrige game_client : timeout sur create(), init de _pending_create, load_dotenv différé
+
+- create() lève TimeoutError si le serveur ne répond pas en 10 s (au lieu de retourner "")
+- _pending_create initialisé à None dans __init__ (plus de hasattr)
+- load_dotenv() déplacé dans __init__ pour éviter l'effet de bord à l'import
+- messages d'erreur mentionnent aussi les variables d'environnement ([`1fe5379`](https://github.com/MMarchand-NSI/metagrid/commit/1fe5379c7867dcc946823d8940bdc09e6a82132c))
+
+- Corrige __init__ : supprime create/join obsolètes de la docstring de create_networked ([`ec23d77`](https://github.com/MMarchand-NSI/metagrid/commit/ec23d7793866f9bee5389c018b2896ea35d1ebf2))
+
+- Corrige networked : UnboundLocalError si stdin fermé dans _create_or_join
+
+Initialise choice avant la boucle et attrape EOFError pour donner un
+message d'erreur explicite au lieu d'un UnboundLocalError trompeur. ([`96a6811`](https://github.com/MMarchand-NSI/metagrid/commit/96a68118b5ea3ba7102a54582cbcda405443b1c3))
+
+- Corrige game_client : 4 bugs de robustesse
+
+- load_dotenv() remis au niveau module (appelé une seule fois à l'import)
+- _start_loop() détecte un thread mort après stop() et réinitialise l'état
+- except Exception aveugle remplacé : ConnectionClosed ignoré, autres erreurs affichées
+- _pending_create remis à None après usage (empêche un double-fire) ([`3ad24b9`](https://github.com/MMarchand-NSI/metagrid/commit/3ad24b903265db3d0082bfec6c775f86c18d9d56))
+
+- Corrige networked : thread orphelin et polling inutile post-partie
+
+- atexit.register déplacé avant _create_or_join() pour garantir _shutdown()
+  même si la connexion échoue (TimeoutError, ConnectionError)
+- _drain_queue() retourne immédiatement si _network_ended (évite
+  thread.is_alive() à 60 fps après la fin de la partie) ([`0c58b8d`](https://github.com/MMarchand-NSI/metagrid/commit/0c58b8d248d95a85c82592b4879816efe21d0403))
+
+- Corrige game_client : _ws, CancelledError, load_dotenv, assert
+
+- _start_loop() réinitialise _ws = None pour éviter _send_sync sur
+  un WebSocket fermé lors d'une reconnexion
+- CancelledError (BaseException) reraisé pour ne pas écraser _connect_error
+  lors d'une fermeture propre de la boucle asyncio
+- find_dotenv(usecwd=True) pour chercher .env depuis le CWD explicitement
+- assert remplacé par RuntimeError avec message explicite dans _send_sync ([`5ec9e92`](https://github.com/MMarchand-NSI/metagrid/commit/5ec9e92d9741386eec7e2cf11ec2460f6e553efd))
+
+- Corrige game_client : fuite event loop, CancelledError, to_thread superflu
+
+- _start_loop ferme l'ancien event loop avant d'en créer un nouveau
+- CancelledError appelle _ready.set() avant de reraiser pour éviter
+  un blocage silencieux de 5 s dans _start_loop
+- _dispatch appelé directement dans la coroutine (non-bloquant) au lieu
+  de passer par asyncio.to_thread — supprime overhead inutile ([`3b710a1`](https://github.com/MMarchand-NSI/metagrid/commit/3b710a13cbeee1a3bef1401de43e396e740a41b1))
+
+- Corrige networked : validation du game_id dans _create_or_join
+
+Un identifiant vide envoyé au serveur provoquait une session muette
+(on_game_start jamais appelé, fenêtre arcade figée sans message).
+La saisie est maintenant redemandée tant que l'ID est vide. ([`0b5db9a`](https://github.com/MMarchand-NSI/metagrid/commit/0b5db9a8bf2f4de781ab18e8bbf06e9ab467250e))
+
+- Corrige game_client : deadlock ping/pong quand _dispatch dans le thread asyncio
+
+_send_sync bloque sur .result() en attendant que la boucle asyncio exécute
+ws.send() — impossible car la boucle est elle-même bloquée sur .result().
+Le ping est maintenant intercepté dans _connect_and_listen avec await ws.send()
+avant d'appeler _dispatch, supprimant la branche ping de _dispatch. ([`254ad8b`](https://github.com/MMarchand-NSI/metagrid/commit/254ad8b478c55d7e134b97e898f5f3d10fed29ff))
+
+- Corrige networked : espaces internes filtres dans le game_id saisi ([`65fc2d7`](https://github.com/MMarchand-NSI/metagrid/commit/65fc2d7e7228f2a9a1f224aaa0ea73e547802e94))
+
+- Corrige networked : erreurs serveur routees dans la queue
+
+Les erreurs serveur (game_id invalide, token expire...) etaient printees
+depuis le thread asyncio mais invisibles pour l'UI arcade. Elles sont
+maintenant injectees dans la queue et traitees comme une fin de partie :
+message affiche + _fire_opponent_left() pour terminer proprement le jeu. ([`29366fe`](https://github.com/MMarchand-NSI/metagrid/commit/29366fe84925f0e898057bbf7d4003e3366dac8d))
+
+- Fix: skip_existing sur PyPI pour eviter echec sur re-run ([`dc086c4`](https://github.com/MMarchand-NSI/metagrid/commit/dc086c4eced7a52daa061c0503f47a0efdf5664d))
+
+
+### 📚 Documentation
+
+- Docs: mise à jour du CHANGELOG pour v0.5.0 ([`9329fff`](https://github.com/MMarchand-NSI/metagrid/commit/9329fffe0ad0ad100f3c1b72aa645fc5a488f04d))
+
+- Docs: section jeux réseau tour par tour dans README.md et README.fr.md ([`5a076ec`](https://github.com/MMarchand-NSI/metagrid/commit/5a076ec9d332048c4dc63341be2be8b9c22ea81e))
+
 ## [0.5.0] - 2026-05-30
 
 ### ✨ Nouveautés
